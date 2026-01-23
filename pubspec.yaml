@@ -1,0 +1,22 @@
+name: draggable_overlay_window
+description: A highly customizable draggable and resizable overlay window widget for Flutter. Perfect for creating floating panels, tool windows, and multi-window interfaces.
+version: 1.0.0
+homepage: https://github.com/JnNetto/draggable_overlay_window
+repository: https://github.com/JnNetto/draggable_overlay_window
+issue_tracker: https://github.com/JnNetto/draggable_overlay_window/issues
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
