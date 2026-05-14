@@ -227,6 +227,7 @@ class DemoPage extends StatelessWidget {
                           showDragHandle: true,
                           borderRadius: 16,
                           headerBackgroundColor: Color(0xFFFFEBEE),
+                          centerInitialPosition: false,
                         ),
                         initialSize: const Size(400, 450),
                       ),

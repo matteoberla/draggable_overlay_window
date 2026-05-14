@@ -209,26 +209,29 @@ class DraggableWindowConfig {
   /// Function to calculate height based on screen height (overrides initialHeight)
   final double Function(double screenHeight)? heightCalculator;
 
-  /// Ícone do minimizar
+  /// Minimize icon
   final IconData minimizeIcon;
 
-  /// Ícone do maximizar/restaurar
+  /// Maximize/restore icon
   final IconData maximizeIcon;
 
-  /// Ícone de fechar
+  /// Close icon
   final IconData closeIcon;
 
-  /// Ícone de arrastar
+  /// Drag handle icon
   final IconData dragHandleIcon;
 
-  /// Se deve mostrar o botão de minimizar
+  /// Whether to show the minimize button
   final bool showMinimizeButton;
 
-  /// Se deve mostrar a alça de arrasto
+  /// Whether to show the drag handle
   final bool showDragHandle;
 
-  /// Idioma dos tooltips
+  /// Language for tooltips
   final WindowLanguage language;
+
+  /// Whether to center the window on initial opening
+  final bool centerInitialPosition;
 
   const DraggableWindowConfig({
     this.minimizedHeight = 48.0,
@@ -268,6 +271,7 @@ class DraggableWindowConfig {
     this.showMinimizeButton = true,
     this.showDragHandle = true,
     this.language = WindowLanguage.en,
+    this.centerInitialPosition = true,
   });
 
   /// Border width
@@ -355,6 +359,7 @@ class DraggableWindowConfig {
     bool? showMinimizeButton,
     bool? showDragHandle,
     WindowLanguage? language,
+    bool? centerInitialPosition,
   }) {
     return DraggableWindowConfig(
       minimizedHeight: minimizedHeight ?? this.minimizedHeight,
@@ -396,6 +401,8 @@ class DraggableWindowConfig {
       showMinimizeButton: showMinimizeButton ?? this.showMinimizeButton,
       showDragHandle: showDragHandle ?? this.showDragHandle,
       language: language ?? this.language,
+      centerInitialPosition:
+          centerInitialPosition ?? this.centerInitialPosition,
     );
   }
 }
@@ -409,7 +416,7 @@ class DraggableWindowController extends ChangeNotifier {
 
   bool _isVisible = false;
   bool _isMinimized = false;
-  Offset _position = const Offset(80, 100);
+  Offset _position = const Offset(-9999, -9999);
   Size _size;
   final String _windowId;
   final String? _tag;
@@ -418,7 +425,7 @@ class DraggableWindowController extends ChangeNotifier {
   /// If [tag] is provided and an instance already exists, it returns the existing one.
   factory DraggableWindowController({
     Size initialSize = const Size(400, 350),
-    Offset initialPosition = const Offset(80, 100),
+    Offset initialPosition = const Offset(-9999, -9999),
     String? tag,
   }) {
     if (tag != null && _instances.containsKey(tag)) {
@@ -440,7 +447,7 @@ class DraggableWindowController extends ChangeNotifier {
 
   DraggableWindowController._internal({
     Size initialSize = const Size(400, 350),
-    Offset initialPosition = const Offset(80, 100),
+    Offset initialPosition = const Offset(-9999, -9999),
     String? tag,
   })  : _size = initialSize,
         _position = initialPosition,
@@ -644,6 +651,7 @@ class DraggableOverlayWindow extends StatefulWidget {
 class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
   late Offset _currentPosition;
   late Size _currentSize;
+  bool _isPositionInitialized = false;
   final WindowManager _windowManager = WindowManager();
 
   DraggableWindowController get _controller => widget.controller;
@@ -653,6 +661,14 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     super.initState();
     _initializeSize();
     _currentPosition = _controller.position;
+    // If the position is the sentinel, it means it hasn't been explicitly set
+    if (_currentPosition != const Offset(-9999, -9999)) {
+      _isPositionInitialized = true;
+    } else {
+      // Temporary fallback until build() can calculate center or use default
+      _currentPosition = const Offset(50, 50);
+      _isPositionInitialized = false;
+    }
     _controller.addListener(_onControllerChanged);
     _windowManager.addListener(_onWindowManagerChanged);
 
@@ -665,15 +681,29 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
 
   void _initializeSize() {
     // Uses the controller size if defined, otherwise uses config
+    Size initialSize;
     if (_controller.size.width > 0 && _controller.size.height > 0) {
-      _currentSize = _controller.size;
+      initialSize = _controller.size;
     } else {
-      _currentSize = Size(
+      initialSize = Size(
         widget.config.initialWidth,
         widget.config.initialHeight,
       );
-      _controller.setInitialState(size: _currentSize);
     }
+
+    // Apply constraints
+    _currentSize = Size(
+      initialSize.width.clamp(
+        widget.config.minWidth,
+        widget.config.maxWidth ?? double.infinity,
+      ),
+      initialSize.height.clamp(
+        widget.config.minHeight,
+        widget.config.maxHeight ?? double.infinity,
+      ),
+    );
+
+    _controller.setInitialState(size: _currentSize);
   }
 
   @override
@@ -688,7 +718,17 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     if (mounted) {
       setState(() {
         _currentPosition = _controller.position;
-        _currentSize = _controller.size;
+        // Clamp size from controller
+        _currentSize = Size(
+          _controller.size.width.clamp(
+            widget.config.minWidth,
+            widget.config.maxWidth ?? double.infinity,
+          ),
+          _controller.size.height.clamp(
+            widget.config.minHeight,
+            widget.config.maxHeight ?? double.infinity,
+          ),
+        );
       });
     }
   }
@@ -913,17 +953,47 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       return const SizedBox.shrink();
     }
 
-    final width = _calculateWidth(
-      context,
-    ).clamp(widget.config.minWidth, double.infinity);
+    final screenSize = MediaQuery.of(context).size;
+
+    // Initialize position to center if requested and not yet initialized
+    if (!_isPositionInitialized && widget.config.centerInitialPosition) {
+      final width = _calculateWidth(context).clamp(
+        widget.config.minWidth,
+        widget.config.maxWidth ?? double.infinity,
+      );
+      final height = _calculateHeight(context).clamp(
+        widget.config.minHeight,
+        widget.config.maxHeight ?? double.infinity,
+      );
+
+      _currentPosition = Offset(
+        (screenSize.width - width) / 2,
+        (screenSize.height - height) / 2,
+      );
+      _controller.setInitialState(position: _currentPosition);
+      _isPositionInitialized = true;
+    } else if (!_isPositionInitialized) {
+      // If centering is disabled and not yet initialized, use default
+      _currentPosition = const Offset(50, 50);
+      _controller.setInitialState(position: _currentPosition);
+      _isPositionInitialized = true;
+    }
+
+    final width = _calculateWidth(context).clamp(
+      widget.config.minWidth,
+      widget.config.maxWidth ?? double.infinity,
+    );
     final isMinimized = _controller.isMinimized;
     final isFocused = _windowManager.isOnTop(_controller.windowId);
+
     // When minimized, use only the header height
-    // Ensure the height is never negative
-    final height = (isMinimized
-            ? widget.config.minimizedHeight
-            : _calculateHeight(context))
-        .clamp(widget.config.minimizedHeight, double.infinity);
+    // When expanded, respect minHeight and maxHeight
+    final height = isMinimized
+        ? widget.config.minimizedHeight
+        : _calculateHeight(context).clamp(
+            widget.config.minHeight,
+            widget.config.maxHeight ?? double.infinity,
+          );
 
     final theme = Theme.of(context);
     final config = widget.config;

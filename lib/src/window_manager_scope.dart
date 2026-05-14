@@ -199,7 +199,7 @@ class _WindowManagerScopeState extends State<WindowManagerScope> {
             config?.initialWidth ?? widget.defaultConfig.initialWidth,
             config?.initialHeight ?? widget.defaultConfig.initialHeight,
           ),
-      initialPosition: initialPosition ?? const Offset(50, 50),
+      initialPosition: initialPosition ?? const Offset(-9999, -9999),
       tag: unique ? id : null,
     );
 
