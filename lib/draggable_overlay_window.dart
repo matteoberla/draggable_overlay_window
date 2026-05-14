@@ -2,25 +2,25 @@ import 'package:flutter/material.dart';
 
 /// # DraggableOverlayWindow v2.2
 ///
-/// Um widget de janela flutuante arrastável, redimensionável e minimizável para Flutter.
-/// Pode ser usado como uma janela de overlay em qualquer aplicação Flutter.
+/// A draggable, resizable, and minimizable floating window widget for Flutter.
+/// Can be used as an overlay window in any Flutter application.
 ///
-/// ## Características:
-/// - ✅ Arrastável (drag & drop)
-/// - ✅ Redimensionável (resize handles nos cantos e bordas) - pode ser desabilitado
-/// - ✅ Minimizável com callbacks onMinimized/onRestored
-/// - ✅ Fechável
-/// - ✅ Sistema de foco (z-index) - clique para trazer ao topo
-/// - ✅ Responsivo (adapta-se a diferentes tamanhos de tela)
-/// - ✅ Personalizável (título e ícone opcionais, cores, tamanhos)
-/// - ✅ Mantém estado quando minimizado
-/// - ✅ Key obrigatória para melhor controle do widget
+/// ## Features:
+/// - ✅ Draggable (drag & drop)
+/// - ✅ Resizable (resize handles on corners and edges) - can be disabled
+/// - ✅ Minimizable with onMinimized/onRestored callbacks
+/// - ✅ Closable
+/// - ✅ Focus system (z-index) - click to bring to top
+/// - ✅ Responsive (adapts to different screen sizes)
+/// - ✅ Customizable (optional title and icon, colors, sizes)
+/// - ✅ Maintains state when minimized
+/// - ✅ Mandatory Key for better widget control
 
 // ============================================================================
-// GERENCIADOR DE JANELAS (para controle de z-index/foco)
+// WINDOW MANAGER (for z-index/focus control)
 // ============================================================================
 
-/// Gerenciador global de janelas para controlar z-index e foco
+/// Global window manager to control z-index and focus
 class WindowManager extends ChangeNotifier {
   static final WindowManager _instance = WindowManager._internal();
   factory WindowManager() => _instance;
@@ -29,19 +29,19 @@ class WindowManager extends ChangeNotifier {
   final List<String> _windowStack = [];
   int _nextId = 0;
 
-  /// Gera um ID único para uma nova janela
+  /// Generates a unique ID for a new window
   String generateId() {
     return 'window_${_nextId++}';
   }
 
   final Map<String, String> _taggedWindows = {};
 
-  /// Registra uma janela com uma tag opcional (para garantir unicidade)
+  /// Registers a window with an optional tag (to ensure uniqueness)
   void registerWindow(String windowId, {String? tag}) {
     if (tag != null) {
       if (_taggedWindows.containsKey(tag)) {
-        // Se a tag já existe e aponta para outro ID, atualiza
-        // Mas idealmente, a UI deve verificar antes
+        // If the tag already exists and points to another ID, update it
+        // But ideally, the UI should check before registering
       }
       _taggedWindows[tag] = windowId;
     }
@@ -52,19 +52,19 @@ class WindowManager extends ChangeNotifier {
     }
   }
 
-  /// Remove uma janela do gerenciador
+  /// Removes a window from the manager
   void unregisterWindow(String windowId) {
     _windowStack.remove(windowId);
     _taggedWindows.removeWhere((key, value) => value == windowId);
     notifyListeners();
   }
 
-  /// Verifica se existe uma janela com a tag fornecida
+  /// Checks if a window exists with the given tag
   String? getWindowIdByTag(String tag) {
     return _taggedWindows[tag];
   }
 
-  /// Traz uma janela para o topo (foco)
+  /// Brings a window to the front (focus)
   void bringToFront(String windowId) {
     if (_windowStack.contains(windowId)) {
       _windowStack.remove(windowId);
@@ -73,97 +73,106 @@ class WindowManager extends ChangeNotifier {
     }
   }
 
-  /// Retorna o z-index de uma janela (maior = mais acima)
+  /// Returns the z-index of a window (higher = more on top)
   int getZIndex(String windowId) {
     return _windowStack.indexOf(windowId);
   }
 
-  /// Retorna se a janela está no topo
+  /// Returns if the window is on top
   bool isOnTop(String windowId) {
     return _windowStack.isNotEmpty && _windowStack.last == windowId;
   }
 
-  /// Lista de todas as janelas ordenadas por z-index
+  /// List of all windows ordered by z-index
   List<String> get windowStack => List.unmodifiable(_windowStack);
 }
 
 // ============================================================================
-// CONFIGURAÇÕES
+// CONFIGURATION
 // ============================================================================
 
-/// Configurações personalizáveis para o DraggableOverlayWindow
+/// Customizable configurations for DraggableOverlayWindow
 class DraggableWindowConfig {
-  /// Altura da janela quando minimizada (apenas header)
+  /// Height of the window when minimized (header only)
   final double minimizedHeight;
 
-  /// Raio das bordas arredondadas
+  /// Rounded corners radius
   final double borderRadius;
 
-  /// Elevação (sombra) da janela
+  /// Elevation (shadow) of the window
   final double elevation;
 
-  /// Elevação quando a janela está em foco
+  /// Elevation when the window is focused
   final double focusedElevation;
 
-  /// Cor de fundo do cabeçalho
+  /// Header background color
   final Color? headerBackgroundColor;
 
-  /// Cor de fundo da janela
+  /// Window background color
   final Color? windowBackgroundColor;
 
-  /// Cor da borda
+  /// Border color
   final Color? borderColor;
 
-  /// Cor da borda quando em foco
+  /// Border color when focused
   final Color? focusedBorderColor;
 
-  /// Se deve habilitar rolagem automática no conteúdo
+  /// Whether to enable automatic scrolling in content
   final bool enableScrolling;
 
-  /// Padding do conteúdo
+  /// Content padding
   final EdgeInsets contentPadding;
 
-  /// Se a janela pode ser redimensionada
+  /// Whether the window can be resized
   final bool resizable;
 
-  /// Tamanho da área de arraste para redimensionar
+  /// Size of the resize handle area
   final double resizeHandleSize;
 
-  /// Largura mínima da janela
+  /// Minimum window width
   final double minWidth;
 
-  /// Altura mínima da janela
+  /// Minimum window height
   final double minHeight;
 
-  /// Largura máxima da janela (null = sem limite)
+  /// Maximum window width (null = no limit)
   final double? maxWidth;
 
-  /// Altura máxima da janela (null = sem limite)
+  /// Maximum window height (null = no limit)
   final double? maxHeight;
 
-  /// Largura inicial da janela
+  /// Initial window width
   final double initialWidth;
 
-  /// Altura inicial da janela
+  /// Initial window height
   final double initialHeight;
 
-  /// Função para calcular a largura baseada na largura da tela (sobrescreve initialWidth)
+  /// Function to calculate width based on screen width (overrides initialWidth)
   final double Function(double screenWidth)? widthCalculator;
 
-  /// Função para calcular a altura baseada na altura da tela (sobrescreve initialHeight)
+  /// Function to calculate height based on screen height (overrides initialHeight)
   final double Function(double screenHeight)? heightCalculator;
 
-  /// Ícone do minimizar
+  /// Minimize icon
   final IconData minimizeIcon;
 
-  /// Ícone do maximizar/restaurar
+  /// Maximize/Restore icon
   final IconData maximizeIcon;
 
-  /// Ícone de fechar
+  /// Close icon
   final IconData closeIcon;
 
-  /// Ícone de arrastar
+  /// Drag handle icon
   final IconData dragHandleIcon;
+
+  /// Whether to show the minimize button
+  final bool showMinimizeButton;
+
+  /// Whether to show the drag handle icon
+  final bool showDragHandle;
+
+  /// Current language for tooltips
+  final WindowLanguage language;
 
   const DraggableWindowConfig({
     this.minimizedHeight = 48.0,
@@ -200,42 +209,45 @@ class DraggableWindowConfig {
     this.headerIconColor,
     this.headerButtonsColor,
     this.headerTextStyle,
+    this.showMinimizeButton = true,
+    this.showDragHandle = true,
+    this.language = WindowLanguage.en,
   });
 
-  /// Largura da borda
+  /// Border width
   final double borderWidth;
 
-  /// Largura da borda quando em foco
+  /// Border width when focused
   final double? focusedBorderWidth;
 
-  /// Se deve mostrar a borda de foco
+  /// Whether to show focus border
   final bool showFocusBorder;
 
-  /// Altura (espessura) do divisor
+  /// Divider height (thickness)
   final double dividerHeight;
 
-  /// Se deve mostrar o divisor
+  /// Whether to show the divider
   final bool showDivider;
 
-  /// Cor do divisor
+  /// Divider color
   final Color? dividerColor;
 
-  /// Padding do conteúdo do header
+  /// Header content padding
   final EdgeInsets? headerPadding;
 
-  /// Cor dos ícones do header
+  /// Header icon color
   final Color? headerIconColor;
 
-  /// Cor dos botões do header
+  /// Header buttons color
   final Color? headerButtonsColor;
 
-  /// Estilo do texto do header
+  /// Header text style
   final TextStyle? headerTextStyle;
 
-  /// Configuração padrão
+  /// Default configuration
   static const DraggableWindowConfig defaultConfig = DraggableWindowConfig();
 
-  /// Configuração compacta para telas menores
+  /// Compact configuration for smaller screens
   static const DraggableWindowConfig compactConfig = DraggableWindowConfig(
     minimizedHeight: 40.0,
     borderRadius: 8.0,
@@ -248,7 +260,7 @@ class DraggableWindowConfig {
     initialHeight: 250.0,
   );
 
-  /// Cria uma cópia com valores alterados
+  /// Creates a copy with changed values
   DraggableWindowConfig copyWith({
     double? minimizedHeight,
     double? borderRadius,
@@ -284,6 +296,9 @@ class DraggableWindowConfig {
     Color? headerIconColor,
     Color? headerButtonsColor,
     TextStyle? headerTextStyle,
+    bool? showMinimizeButton,
+    bool? showDragHandle,
+    WindowLanguage? language,
   }) {
     return DraggableWindowConfig(
       minimizedHeight: minimizedHeight ?? this.minimizedHeight,
@@ -322,14 +337,75 @@ class DraggableWindowConfig {
       headerIconColor: headerIconColor ?? this.headerIconColor,
       headerButtonsColor: headerButtonsColor ?? this.headerButtonsColor,
       headerTextStyle: headerTextStyle ?? this.headerTextStyle,
+      showMinimizeButton: showMinimizeButton ?? this.showMinimizeButton,
+      showDragHandle: showDragHandle ?? this.showDragHandle,
+      language: language ?? this.language,
     );
+  }
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+/// Supported languages for window tooltips
+enum WindowLanguage {
+  en,
+  it,
+  pt,
+  es,
+  fr,
+  de,
+}
+
+// ============================================================================
+// LOCALIZATION
+// ============================================================================
+
+/// Localization helper for DraggableOverlayWindow tooltips
+class _WindowLocalizations {
+  static const Map<WindowLanguage, Map<String, String>> _data = {
+    WindowLanguage.en: {
+      'minimize': 'Minimize',
+      'maximize': 'Restore',
+      'close': 'Close',
+    },
+    WindowLanguage.it: {
+      'minimize': 'Minimizza',
+      'maximize': 'Ripristina',
+      'close': 'Chiudi',
+    },
+    WindowLanguage.pt: {
+      'minimize': 'Minimizar',
+      'maximize': 'Restaurar',
+      'close': 'Fechar',
+    },
+    WindowLanguage.es: {
+      'minimize': 'Minimizar',
+      'maximize': 'Restaurar',
+      'close': 'Cerrar',
+    },
+    WindowLanguage.fr: {
+      'minimize': 'Réduire',
+      'maximize': 'Restaurer',
+      'close': 'Fermer',
+    },
+    WindowLanguage.de: {
+      'minimize': 'Minimieren',
+      'maximize': 'Wiederherstellen',
+      'close': 'Schließen',
+    },
+  };
+
+  static String get(String key, WindowLanguage language) {
+    return _data[language]![key] ?? _data[WindowLanguage.en]![key]!;
   }
 }
 
 // ============================================================================
 // CONTROLLER
 // ============================================================================
-/// Controller para controlar o DraggableOverlayWindow programaticamente
+/// Controller to control DraggableOverlayWindow programmatically
 class DraggableWindowController extends ChangeNotifier {
   static final Map<String, DraggableWindowController> _instances = {};
 
@@ -340,8 +416,8 @@ class DraggableWindowController extends ChangeNotifier {
   final String _windowId;
   final String? _tag;
 
-  /// Construtor Factory
-  /// Se [tag] for fornecido e já existir uma instância, retorna a existente.
+  /// Factory Constructor
+  /// If [tag] is provided and an instance already exists, returns the existing one.
   factory DraggableWindowController({
     Size initialSize = const Size(400, 350),
     Offset initialPosition = const Offset(80, 100),
@@ -373,25 +449,25 @@ class DraggableWindowController extends ChangeNotifier {
         _windowId = WindowManager().generateId(),
         _tag = tag;
 
-  /// ID único da janela
+  /// Unique ID of the window
   String get windowId => _windowId;
 
-  /// Se a janela está visível
+  /// Whether the window is visible
   bool get isVisible => _isVisible;
 
-  /// Se a janela está minimizada
+  /// Whether the window is minimized
   bool get isMinimized => _isMinimized;
 
-  /// Posição atual da janela
+  /// Current position of the window
   Offset get position => _position;
 
-  /// Tamanho atual da janela
+  /// Current size of the window
   Size get size => _size;
 
-  /// Se a janela está em foco (no topo)
+  /// Whether the window is in focus (on top)
   bool get isFocused => WindowManager().isOnTop(_windowId);
 
-  /// Mostra a janela
+  /// Shows the window
   void show() {
     if (!_isVisible) {
       _isVisible = true;
@@ -402,7 +478,7 @@ class DraggableWindowController extends ChangeNotifier {
     }
   }
 
-  /// Esconde a janela
+  /// Hides the window
   void hide() {
     if (_isVisible) {
       _isVisible = false;
@@ -411,7 +487,7 @@ class DraggableWindowController extends ChangeNotifier {
     }
   }
 
-  /// Alterna visibilidade
+  /// Toggles visibility
   void toggle() {
     if (_isVisible) {
       hide();
@@ -420,7 +496,7 @@ class DraggableWindowController extends ChangeNotifier {
     }
   }
 
-  /// Minimiza a janela
+  /// Minimizes the window
   void minimize() {
     if (_isVisible && !_isMinimized) {
       _isMinimized = true;
@@ -428,7 +504,7 @@ class DraggableWindowController extends ChangeNotifier {
     }
   }
 
-  /// Restaura a janela (maximiza)
+  /// Restores the window (maximizes)
   void restore() {
     if (_isVisible && _isMinimized) {
       _isMinimized = false;
@@ -436,7 +512,7 @@ class DraggableWindowController extends ChangeNotifier {
     }
   }
 
-  /// Alterna estado minimizado
+  /// Toggles minimized state
   void toggleMinimize() {
     if (_isVisible) {
       _isMinimized = !_isMinimized;
@@ -444,12 +520,12 @@ class DraggableWindowController extends ChangeNotifier {
     }
   }
 
-  /// Traz a janela para o topo (foco)
+  /// Brings the window to the top (focus)
   void bringToFront() {
     WindowManager().bringToFront(_windowId);
   }
 
-  /// Define a posição da janela
+  /// Sets the window position
   void setPosition(Offset newPosition) {
     if (_position != newPosition) {
       _position = newPosition;
@@ -457,7 +533,7 @@ class DraggableWindowController extends ChangeNotifier {
     }
   }
 
-  /// Define o tamanho da janela
+  /// Sets the window size
   void setSize(Size newSize) {
     if (_size != newSize) {
       _size = newSize;
@@ -465,7 +541,7 @@ class DraggableWindowController extends ChangeNotifier {
     }
   }
 
-  /// Define posição e tamanho sem notificar (usado na inicialização)
+  /// Sets position and size without notifying (used in initialization)
   void setInitialState({Offset? position, Size? size}) {
     if (position != null) _position = position;
     if (size != null) _size = size;
@@ -485,7 +561,7 @@ class DraggableWindowController extends ChangeNotifier {
 // ENUMS
 // ============================================================================
 
-/// Direção de redimensionamento
+/// Resize direction
 enum _ResizeDirection {
   topLeft,
   top,
@@ -498,42 +574,51 @@ enum _ResizeDirection {
 }
 
 // ============================================================================
-// WIDGET PRINCIPAL
+// MAIN WIDGET
 // ============================================================================
 
-/// Widget de janela flutuante arrastável e redimensionável
+/// A draggable and resizable floating window widget
 class DraggableOverlayWindow extends StatefulWidget {
-  /// Controller para controle programático
+  /// Controller for programmatic control
   final DraggableWindowController controller;
 
-  /// Título exibido no cabeçalho (opcional)
+  /// Title displayed in the header (optional)
   final String? title;
 
-  /// Ícone exibido no cabeçalho (opcional)
+  /// Custom widget to display as title (optional, overrides [title])
+  final Widget? titleWidget;
+
+  /// Custom widget displayed near the drag handle (optional)
+  final Widget? headerLeading;
+
+  /// Custom widget displayed before minimize/close buttons (optional)
+  final Widget? headerActions;
+
+  /// Icon displayed in the header (optional)
   final IconData? icon;
 
-  /// Conteúdo da janela
+  /// Window content
   final Widget content;
 
-  /// Configurações personalizadas
+  /// Custom configurations
   final DraggableWindowConfig config;
 
-  /// Callback quando a janela ganha foco
+  /// Callback when the window gains focus
   final VoidCallback? onFocus;
 
-  /// Callback quando a janela é fechada
+  /// Callback when the window is closed
   final VoidCallback? onClose;
 
-  /// Callback quando a janela é minimizada
+  /// Callback when the window is minimized
   final VoidCallback? onMinimized;
 
-  /// Callback quando a janela é restaurada (maximizada)
+  /// Callback when the window is restored (maximized)
   final VoidCallback? onRestored;
 
-  /// Callback quando a posição muda
+  /// Callback when the position changes
   final ValueChanged<Offset>? onPositionChanged;
 
-  /// Callback quando o tamanho muda
+  /// Callback when the size changes
   final ValueChanged<Size>? onSizeChanged;
 
   const DraggableOverlayWindow({
@@ -541,6 +626,9 @@ class DraggableOverlayWindow extends StatefulWidget {
     required this.controller,
     required this.content,
     this.title,
+    this.titleWidget,
+    this.headerLeading,
+    this.headerActions,
     this.icon,
     this.config = const DraggableWindowConfig(),
     this.onFocus,
@@ -578,7 +666,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
   }
 
   void _initializeSize() {
-    // Usa o tamanho do controller se já definido, senão usa o config
+    // Use the controller's size if already defined, otherwise use config
     if (_controller.size.width > 0 && _controller.size.height > 0) {
       _currentSize = _controller.size;
     } else {
@@ -598,7 +686,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
   }
 
   void _onControllerChanged() {
-    // Evita conflitos de atualização com o controller
+    // Avoid update conflicts with the controller
     if (mounted) {
       setState(() {
         _currentPosition = _controller.position;
@@ -642,7 +730,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
   void _handleDrag(DragUpdateDetails details) {
     final screenSize = MediaQuery.of(context).size;
     final width = _calculateWidth(context);
-    // Usar minimizedHeight quando minimizado
+    // Use minimizedHeight when minimized
     final height = _controller.isMinimized
         ? widget.config.minimizedHeight
         : _calculateHeight(context);
@@ -672,26 +760,26 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     final dx = details.delta.dx;
     final dy = details.delta.dy;
 
-    // Posição e tamanho atuais
+    // Current position and size
     double left = _currentPosition.dx;
     double top = _currentPosition.dy;
     double width = _currentSize.width;
     double height = _currentSize.height;
 
-    // CORREÇÃO: Aplicar deltas de acordo com a direção
+    // FIX: Apply deltas according to direction
     switch (direction) {
       case _ResizeDirection.left:
       case _ResizeDirection.topLeft:
       case _ResizeDirection.bottomLeft:
-        // Ao redimensionar pela esquerda, mover a borda esquerda
+        // When resizing from the left, move the left edge
         left += dx;
         width -=
-            dx; // Diminui largura ao mover para direita, aumenta ao mover para esquerda
+            dx; // Decreases width when moving right, increases when moving left
         break;
       case _ResizeDirection.right:
       case _ResizeDirection.topRight:
       case _ResizeDirection.bottomRight:
-        // Ao redimensionar pela direita, apenas aumentar largura
+        // When resizing from the right, only increase width
         width += dx;
         break;
       default:
@@ -702,28 +790,28 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       case _ResizeDirection.top:
       case _ResizeDirection.topLeft:
       case _ResizeDirection.topRight:
-        // Ao redimensionar pelo topo, mover a borda superior
+        // When resizing from the top, move the top edge
         top += dy;
         height -=
-            dy; // Diminui altura ao mover para baixo, aumenta ao mover para cima
+            dy; // Decreases height when moving down, increases when moving up
         break;
       case _ResizeDirection.bottom:
       case _ResizeDirection.bottomLeft:
       case _ResizeDirection.bottomRight:
-        // Ao redimensionar por baixo, apenas aumentar altura
+        // When resizing from the bottom, only increase height
         height += dy;
         break;
       default:
         break;
     }
 
-    // Aplicar limites de tamanho mínimo
+    // Apply minimum size limits
     if (width < config.minWidth) {
       if (direction == _ResizeDirection.left ||
           direction == _ResizeDirection.topLeft ||
           direction == _ResizeDirection.bottomLeft) {
-        // Se estamos redimensionando pela esquerda e atingimos o mínimo,
-        // ajustar a posição left para manter o tamanho mínimo
+        // If we are resizing from the left and reached the minimum,
+        // adjust the left position to maintain the minimum size
         left = _currentPosition.dx + (_currentSize.width - config.minWidth);
       }
       width = config.minWidth;
@@ -733,14 +821,14 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       if (direction == _ResizeDirection.top ||
           direction == _ResizeDirection.topLeft ||
           direction == _ResizeDirection.topRight) {
-        // Se estamos redimensionando pelo topo e atingimos o mínimo,
-        // ajustar a posição top para manter o tamanho mínimo
+        // If we are resizing from the top and reached the minimum,
+        // adjust the top position to maintain the minimum size
         top = _currentPosition.dy + (_currentSize.height - config.minHeight);
       }
       height = config.minHeight;
     }
 
-    // Aplicar limites de tamanho máximo
+    // Apply maximum size limits
     final maxW = config.maxWidth ?? screenSize.width;
     final maxH = config.maxHeight ?? screenSize.height;
 
@@ -762,51 +850,51 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       height = maxH;
     }
 
-    // Garantir que não saia da tela
+    // Ensure it doesn't go off-screen
     if (left < 0) {
-      width += left; // Ajusta largura se a posição left for negativa
+      width += left; // Adjusts width if left position is negative
       left = 0;
     }
     if (top < 0) {
-      height += top; // Ajusta altura se a posição top for negativa
+      height += top; // Adjusts height if top position is negative
       top = 0;
     }
 
-    // Garantir que a borda direita não ultrapasse a tela
+    // Ensure the right edge doesn't exceed the screen
     if (left + width > screenSize.width) {
       if (direction == _ResizeDirection.left ||
           direction == _ResizeDirection.topLeft ||
           direction == _ResizeDirection.bottomLeft) {
-        // Se estamos redimensionando pela esquerda, ajustar left
+        // If we are resizing from the left, adjust left
         left = screenSize.width - width;
         if (left < 0) {
           left = 0;
           width = screenSize.width;
         }
       } else {
-        // Senão, ajustar width
+        // Otherwise, adjust width
         width = screenSize.width - left;
       }
     }
 
-    // Garantir que a borda inferior não ultrapasse a tela
+    // Ensure the bottom edge doesn't exceed the screen
     if (top + height > screenSize.height) {
       if (direction == _ResizeDirection.top ||
           direction == _ResizeDirection.topLeft ||
           direction == _ResizeDirection.topRight) {
-        // Se estamos redimensionando pelo topo, ajustar top
+        // If we are resizing from the top, adjust top
         top = screenSize.height - height;
         if (top < 0) {
           top = 0;
           height = screenSize.height;
         }
       } else {
-        // Senão, ajustar height
+        // Otherwise, adjust height
         height = screenSize.height - top;
       }
     }
 
-    // Atualizar estado
+    // Update state
     final newPosition = Offset(left, top);
     final newSize = Size(width, height);
 
@@ -832,8 +920,8 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     ).clamp(widget.config.minWidth, double.infinity);
     final isMinimized = _controller.isMinimized;
     final isFocused = _windowManager.isOnTop(_controller.windowId);
-    // Quando minimizado, usar apenas a altura do header
-    // Garantir que a altura nunca seja negativa
+    // When minimized, use only the header height
+    // Ensure height is never negative
     final height = (isMinimized
             ? widget.config.minimizedHeight
             : _calculateHeight(context))
@@ -850,8 +938,8 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
         : (config.borderColor ?? Colors.grey.shade300);
     final elevation = isFocused ? config.focusedElevation : config.elevation;
 
-    // Uso de Align + Transform evita erros de ParentData no Stack
-    // e garante que a origem seja (0,0) para o offset funcionar corretamente
+    // Use of Align + Transform avoids ParentData errors in Stack
+    // and ensures the origin is (0,0) for the offset to work correctly
     return Align(
       alignment: Alignment.topLeft,
       child: Transform.translate(
@@ -865,7 +953,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                 ? theme.colorScheme.primary.withValues(alpha: 0.3)
                 : null,
             child: AnimatedContainer(
-              // Sem animação para evitar problemas de overflow
+              // No animation to avoid overflow issues
               duration: Duration.zero,
               curve: Curves.linear,
               width: width,
@@ -875,8 +963,8 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                 borderRadius: borderRadius,
                 border: Border.all(
                   color: borderColor,
-                  // Se focusedBorderWidth não for definido, usa borderWidth
-                  // Se showFocusBorder for false, usa borderWidth
+                  // If focusedBorderWidth is not defined, use borderWidth
+                  // If showFocusBorder is false, use borderWidth
                   width: (isFocused && config.showFocusBorder)
                       ? (config.focusedBorderWidth ?? config.borderWidth)
                       : config.borderWidth,
@@ -892,11 +980,11 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
               clipBehavior: Clip.antiAlias,
               child: Stack(
                 children: [
-                  // Conteúdo principal
+                  // Main content
                   Column(
                     mainAxisSize: MainAxisSize.max,
                     children: [
-                      // Quando minimizado, o header deve expandir para ocupar todo o espaço
+                      // When minimized, the header should expand to fill all space
                       if (isMinimized)
                         Expanded(
                           child: _buildHeader(
@@ -934,7 +1022,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                     ],
                   ),
 
-                  // Resize handles (apenas se não estiver minimizado e resizable)
+                  // Resize handles (only if not minimized and resizable)
                   if (!isMinimized && config.resizable)
                     ..._buildResizeHandles(),
                 ],
@@ -951,7 +1039,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     final cornerSize = handleSize * 2;
 
     return [
-      // Bordas
+      // Edges
       // Top
       Positioned(
         top: 0,
@@ -996,7 +1084,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
           SystemMouseCursors.resizeRight,
         ),
       ),
-      // Cantos
+      // Corners
       // Top-Left
       Positioned(
         top: 0,
@@ -1050,16 +1138,16 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       child: GestureDetector(
         onPanUpdate: (details) => _handleResize(direction, details),
         onPanStart: (details) {
-          // CORREÇÃO: Trazer ao topo mas NÃO chamar _handleDragStart
-          // que causava conflito com o resize
+          // FIX: Bring to front but do NOT call _handleDragStart
+          // which caused conflict with resize
           _controller.bringToFront();
           widget.onFocus?.call();
         },
         onPanEnd: (_) {},
         onPanCancel: () {},
         behavior: HitTestBehavior
-            .opaque, // MUDANÇA CRÍTICA: de translucent para opaque
-        // Isso impede que o gesto "vaze" para o GestureDetector pai
+            .opaque, // CRITICAL CHANGE: from translucent to opaque
+        // This prevents the gesture from "leaking" to the parent GestureDetector
         child: Container(color: Colors.transparent),
       ),
     );
@@ -1118,38 +1206,60 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     );
   }
 
+  Widget _buildTitleWidget(ThemeData theme, bool isFocused, bool isMinimized) {
+    if (widget.titleWidget != null) {
+      return widget.titleWidget!;
+    }
+
+    if (widget.title == null) return const SizedBox.shrink();
+
+    return Text(
+      widget.title!,
+      style: widget.config.headerTextStyle ??
+          (isMinimized
+              ? theme.textTheme.titleSmall?.copyWith(
+                  fontSize: 13,
+                  fontWeight: isFocused ? FontWeight.w600 : FontWeight.normal,
+                )
+              : theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: isFocused ? FontWeight.w600 : FontWeight.normal,
+                )),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
   Widget _buildMinimizedHeader(ThemeData theme, bool isFocused) {
     final defaultIconColor = isFocused ? theme.colorScheme.primary : null;
     final iconColor = widget.config.headerIconColor ?? defaultIconColor;
     final buttonsColor = widget.config.headerButtonsColor ?? iconColor;
+    final lang = widget.config.language;
 
     return Row(
       children: [
-        Icon(widget.config.dragHandleIcon, size: 14, color: iconColor),
+        if (widget.config.showDragHandle)
+          Icon(widget.config.dragHandleIcon, size: 14, color: iconColor),
+        if (widget.headerLeading != null) ...[
+          const SizedBox(width: 4),
+          widget.headerLeading!,
+        ],
         if (widget.icon != null) ...[
           const SizedBox(width: 6),
           Icon(widget.icon, size: 16, color: iconColor),
         ],
-        if (widget.title != null) ...[
+        if (widget.titleWidget != null || widget.title != null) ...[
           const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              widget.title!,
-              style: widget.config.headerTextStyle ??
-                  theme.textTheme.titleSmall?.copyWith(
-                    fontSize: 13,
-                    fontWeight: isFocused ? FontWeight.w600 : FontWeight.normal,
-                  ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          Expanded(child: _buildTitleWidget(theme, isFocused, true)),
         ] else
           const Spacer(),
+        if (widget.headerActions != null) ...[
+          widget.headerActions!,
+          const SizedBox(width: 4),
+        ],
         const SizedBox(width: 4),
         _buildHeaderButton(
           icon: widget.config.maximizeIcon,
-          tooltip: 'Restaurar',
+          tooltip: _WindowLocalizations.get('maximize', lang),
           onTap: () {
             _controller.restore();
             widget.onRestored?.call();
@@ -1160,13 +1270,13 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
         const SizedBox(width: 2),
         _buildHeaderButton(
           icon: widget.config.closeIcon,
-          tooltip: 'Fechar',
+          tooltip: _WindowLocalizations.get('close', lang),
           onTap: () {
             _controller.hide();
             widget.onClose?.call();
           },
           isClose: true,
-          color: null, // Fecha sempre tem cor propria ou usa padrao
+          color: null, // Close always has its own color or uses default
           isFocused: isFocused,
         ),
       ],
@@ -1176,42 +1286,42 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
   Widget _buildExpandedHeader(ThemeData theme, bool isFocused) {
     final defaultIconColor = isFocused ? theme.colorScheme.primary : null;
     final iconColor = widget.config.headerIconColor ?? defaultIconColor;
-    // Para Expanded, usa a cor definida
+    final lang = widget.config.language;
 
     return Row(
       children: [
-        Icon(widget.config.dragHandleIcon, size: 16, color: iconColor),
+        if (widget.config.showDragHandle)
+          Icon(widget.config.dragHandleIcon, size: 16, color: iconColor),
+        if (widget.headerLeading != null) ...[
+          const SizedBox(width: 6),
+          widget.headerLeading!,
+        ],
         if (widget.icon != null) ...[
           const SizedBox(width: 8),
           Icon(widget.icon, size: 20, color: iconColor),
         ],
-        if (widget.title != null) ...[
+        if (widget.titleWidget != null || widget.title != null) ...[
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              widget.title!,
-              style: widget.config.headerTextStyle ??
-                  theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: isFocused ? FontWeight.w600 : FontWeight.normal,
-                  ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          Expanded(child: _buildTitleWidget(theme, isFocused, false)),
         ] else
           const Spacer(),
-        _buildHeaderIconButton(
-          icon: widget.config.minimizeIcon,
-          tooltip: 'Minimizar',
-          onPressed: () {
-            _controller.minimize();
-            widget.onMinimized?.call();
-          },
-          color: widget.config.headerButtonsColor,
-        ),
+        if (widget.headerActions != null) ...[
+          widget.headerActions!,
+          const SizedBox(width: 4),
+        ],
+        if (widget.config.showMinimizeButton)
+          _buildHeaderIconButton(
+            icon: widget.config.minimizeIcon,
+            tooltip: _WindowLocalizations.get('minimize', lang),
+            onPressed: () {
+              _controller.minimize();
+              widget.onMinimized?.call();
+            },
+            color: widget.config.headerButtonsColor,
+          ),
         _buildHeaderIconButton(
           icon: widget.config.closeIcon,
-          tooltip: 'Fechar',
+          tooltip: _WindowLocalizations.get('close', lang),
           onPressed: () {
             _controller.hide();
             widget.onClose?.call();
@@ -1270,16 +1380,16 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
 }
 
 // ============================================================================
-// WIDGET CONTAINER (para gerenciar múltiplas janelas com z-index correto)
+// WIDGET CONTAINER (to manage multiple windows with correct z-index)
 // ============================================================================
 
-/// Container que gerencia múltiplas janelas com z-index automático
-/// CORREÇÃO: Usa IndexedStack para manter as posições corretas
+/// Container that manages multiple windows with automatic z-index
+/// FIX: Uses IndexedStack to maintain correct positions
 class OverlayWindowStack extends StatefulWidget {
-  /// Lista de janelas a serem exibidas
+  /// List of windows to be displayed
   final List<DraggableOverlayWindow> windows;
 
-  /// Conteúdo principal (abaixo das janelas)
+  /// Main content (below the windows)
   final Widget? child;
 
   const OverlayWindowStack({super.key, required this.windows, this.child});
@@ -1309,16 +1419,16 @@ class _OverlayWindowStackState extends State<OverlayWindowStack> {
 
   @override
   Widget build(BuildContext context) {
-    // CORREÇÃO: Não reordenar os widgets, apenas controlar a ordem visual
-    // usando a ordem do windowStack para determinar qual está "acima"
+    // FIX: Do not reorder widgets, only control visual order
+    // using the windowStack order to determine which one is "above"
 
-    // Criar um mapa de windowId -> index no stack
+    // Create a map of windowId -> index in the stack
     final stackOrder = <String, int>{};
     for (int i = 0; i < _windowManager.windowStack.length; i++) {
       stackOrder[_windowManager.windowStack[i]] = i;
     }
 
-    // Ordenar as janelas pelo z-index MAS manteremos a mesma key
+    // Sort windows by z-index BUT keep the same key
     final sortedWindows = List<DraggableOverlayWindow>.from(widget.windows);
     sortedWindows.sort((a, b) {
       final zIndexA = stackOrder[a.controller.windowId] ?? -1;
@@ -1330,7 +1440,7 @@ class _OverlayWindowStackState extends State<OverlayWindowStack> {
       child: Stack(
         children: [
           if (widget.child != null) Positioned.fill(child: widget.child!),
-          // CORREÇÃO: As janelas devem ter keys atribuídas na criação
+          // FIX: Windows must have keys assigned upon creation
           ...sortedWindows,
         ],
       ),
