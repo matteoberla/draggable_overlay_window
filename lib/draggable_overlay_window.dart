@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// # DraggableOverlayWindow v2.2
+export 'src/window_manager_scope.dart';
+
+/// # DraggableOverlayWindow v2.3
 ///
 /// A draggable, resizable, and minimizable floating window widget for Flutter.
 /// Can be used as an overlay window in any Flutter application.
@@ -10,11 +12,65 @@ import 'package:flutter/material.dart';
 /// - ✅ Resizable (resize handles on corners and edges) - can be disabled
 /// - ✅ Minimizable with onMinimized/onRestored callbacks
 /// - ✅ Closable
-/// - ✅ Focus system (z-index) - click to bring to top
+/// - ✅ Focus system (z-index) - click to bring to front
 /// - ✅ Responsive (adapts to different screen sizes)
 /// - ✅ Customizable (optional title and icon, colors, sizes)
 /// - ✅ Maintains state when minimized
 /// - ✅ Mandatory Key for better widget control
+
+// ============================================================================
+// ENUMS & LOCALIZATION
+// ============================================================================
+
+/// Supported languages for window tooltips
+enum WindowLanguage {
+  en,
+  it,
+  pt,
+  es,
+  fr,
+  de,
+}
+
+/// Localization helper for DraggableOverlayWindow tooltips
+class _WindowLocalizations {
+  static const Map<WindowLanguage, Map<String, String>> _data = {
+    WindowLanguage.en: {
+      'minimize': 'Minimize',
+      'maximize': 'Restore',
+      'close': 'Close',
+    },
+    WindowLanguage.it: {
+      'minimize': 'Minimizza',
+      'maximize': 'Ripristina',
+      'close': 'Chiudi',
+    },
+    WindowLanguage.pt: {
+      'minimize': 'Minimizar',
+      'maximize': 'Restaurar',
+      'close': 'Fechar',
+    },
+    WindowLanguage.es: {
+      'minimize': 'Minimizar',
+      'maximize': 'Restaurar',
+      'close': 'Cerrar',
+    },
+    WindowLanguage.fr: {
+      'minimize': 'Réduire',
+      'maximize': 'Restaurer',
+      'close': 'Fermer',
+    },
+    WindowLanguage.de: {
+      'minimize': 'Minimieren',
+      'maximize': 'Wiederherstellen',
+      'close': 'Schließen',
+    },
+  };
+
+  static String get(String key, WindowLanguage language) {
+    return _data[language]![key] ?? _data[WindowLanguage.en]![key]!;
+  }
+}
 
 // ============================================================================
 // WINDOW MANAGER (for z-index/focus control)
@@ -40,8 +96,8 @@ class WindowManager extends ChangeNotifier {
   void registerWindow(String windowId, {String? tag}) {
     if (tag != null) {
       if (_taggedWindows.containsKey(tag)) {
-        // If the tag already exists and points to another ID, update it
-        // But ideally, the UI should check before registering
+        // If the tag already exists and points to another ID, update
+        // But ideally, the UI should check before
       }
       _taggedWindows[tag] = windowId;
     }
@@ -59,7 +115,7 @@ class WindowManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Checks if a window exists with the given tag
+  /// Checks if a window with the given tag exists
   String? getWindowIdByTag(String tag) {
     return _taggedWindows[tag];
   }
@@ -78,7 +134,7 @@ class WindowManager extends ChangeNotifier {
     return _windowStack.indexOf(windowId);
   }
 
-  /// Returns if the window is on top
+  /// Returns whether the window is on top
   bool isOnTop(String windowId) {
     return _windowStack.isNotEmpty && _windowStack.last == windowId;
   }
@@ -88,7 +144,7 @@ class WindowManager extends ChangeNotifier {
 }
 
 // ============================================================================
-// CONFIGURATION
+// CONFIGURATIONS
 // ============================================================================
 
 /// Customizable configurations for DraggableOverlayWindow
@@ -96,13 +152,13 @@ class DraggableWindowConfig {
   /// Height of the window when minimized (header only)
   final double minimizedHeight;
 
-  /// Rounded corners radius
+  /// Radius of the rounded corners
   final double borderRadius;
 
   /// Elevation (shadow) of the window
   final double elevation;
 
-  /// Elevation when the window is focused
+  /// Elevation when the window is in focus
   final double focusedElevation;
 
   /// Header background color
@@ -114,10 +170,10 @@ class DraggableWindowConfig {
   /// Border color
   final Color? borderColor;
 
-  /// Border color when focused
+  /// Border color when in focus
   final Color? focusedBorderColor;
 
-  /// Whether to enable automatic scrolling in content
+  /// Whether to enable automatic scrolling in the content
   final bool enableScrolling;
 
   /// Content padding
@@ -126,25 +182,25 @@ class DraggableWindowConfig {
   /// Whether the window can be resized
   final bool resizable;
 
-  /// Size of the resize handle area
+  /// Size of the drag handle area for resizing
   final double resizeHandleSize;
 
-  /// Minimum window width
+  /// Minimum width of the window
   final double minWidth;
 
-  /// Minimum window height
+  /// Minimum height of the window
   final double minHeight;
 
-  /// Maximum window width (null = no limit)
+  /// Maximum width of the window (null = no limit)
   final double? maxWidth;
 
-  /// Maximum window height (null = no limit)
+  /// Maximum height of the window (null = no limit)
   final double? maxHeight;
 
-  /// Initial window width
+  /// Initial width of the window
   final double initialWidth;
 
-  /// Initial window height
+  /// Initial height of the window
   final double initialHeight;
 
   /// Function to calculate width based on screen width (overrides initialWidth)
@@ -153,25 +209,25 @@ class DraggableWindowConfig {
   /// Function to calculate height based on screen height (overrides initialHeight)
   final double Function(double screenHeight)? heightCalculator;
 
-  /// Minimize icon
+  /// Ícone do minimizar
   final IconData minimizeIcon;
 
-  /// Maximize/Restore icon
+  /// Ícone do maximizar/restaurar
   final IconData maximizeIcon;
 
-  /// Close icon
+  /// Ícone de fechar
   final IconData closeIcon;
 
-  /// Drag handle icon
+  /// Ícone de arrastar
   final IconData dragHandleIcon;
 
-  /// Whether to show the minimize button
+  /// Se deve mostrar o botão de minimizar
   final bool showMinimizeButton;
 
-  /// Whether to show the drag handle icon
+  /// Se deve mostrar a alça de arrasto
   final bool showDragHandle;
 
-  /// Current language for tooltips
+  /// Idioma dos tooltips
   final WindowLanguage language;
 
   const DraggableWindowConfig({
@@ -217,10 +273,10 @@ class DraggableWindowConfig {
   /// Border width
   final double borderWidth;
 
-  /// Border width when focused
+  /// Border width when in focus
   final double? focusedBorderWidth;
 
-  /// Whether to show focus border
+  /// Whether to show the focus border
   final bool showFocusBorder;
 
   /// Divider height (thickness)
@@ -235,7 +291,7 @@ class DraggableWindowConfig {
   /// Header content padding
   final EdgeInsets? headerPadding;
 
-  /// Header icon color
+  /// Header icons color
   final Color? headerIconColor;
 
   /// Header buttons color
@@ -260,7 +316,7 @@ class DraggableWindowConfig {
     initialHeight: 250.0,
   );
 
-  /// Creates a copy with changed values
+  /// Creates a copy with modified values
   DraggableWindowConfig copyWith({
     double? minimizedHeight,
     double? borderRadius,
@@ -345,67 +401,9 @@ class DraggableWindowConfig {
 }
 
 // ============================================================================
-// ENUMS
-// ============================================================================
-
-/// Supported languages for window tooltips
-enum WindowLanguage {
-  en,
-  it,
-  pt,
-  es,
-  fr,
-  de,
-}
-
-// ============================================================================
-// LOCALIZATION
-// ============================================================================
-
-/// Localization helper for DraggableOverlayWindow tooltips
-class _WindowLocalizations {
-  static const Map<WindowLanguage, Map<String, String>> _data = {
-    WindowLanguage.en: {
-      'minimize': 'Minimize',
-      'maximize': 'Restore',
-      'close': 'Close',
-    },
-    WindowLanguage.it: {
-      'minimize': 'Minimizza',
-      'maximize': 'Ripristina',
-      'close': 'Chiudi',
-    },
-    WindowLanguage.pt: {
-      'minimize': 'Minimizar',
-      'maximize': 'Restaurar',
-      'close': 'Fechar',
-    },
-    WindowLanguage.es: {
-      'minimize': 'Minimizar',
-      'maximize': 'Restaurar',
-      'close': 'Cerrar',
-    },
-    WindowLanguage.fr: {
-      'minimize': 'Réduire',
-      'maximize': 'Restaurer',
-      'close': 'Fermer',
-    },
-    WindowLanguage.de: {
-      'minimize': 'Minimieren',
-      'maximize': 'Wiederherstellen',
-      'close': 'Schließen',
-    },
-  };
-
-  static String get(String key, WindowLanguage language) {
-    return _data[language]![key] ?? _data[WindowLanguage.en]![key]!;
-  }
-}
-
-// ============================================================================
 // CONTROLLER
 // ============================================================================
-/// Controller to control DraggableOverlayWindow programmatically
+/// Controller for programmatic control of a [DraggableOverlayWindow].
 class DraggableWindowController extends ChangeNotifier {
   static final Map<String, DraggableWindowController> _instances = {};
 
@@ -416,8 +414,8 @@ class DraggableWindowController extends ChangeNotifier {
   final String _windowId;
   final String? _tag;
 
-  /// Factory Constructor
-  /// If [tag] is provided and an instance already exists, returns the existing one.
+  /// Factory constructor
+  /// If [tag] is provided and an instance already exists, it returns the existing one.
   factory DraggableWindowController({
     Size initialSize = const Size(400, 350),
     Offset initialPosition = const Offset(80, 100),
@@ -449,7 +447,7 @@ class DraggableWindowController extends ChangeNotifier {
         _windowId = WindowManager().generateId(),
         _tag = tag;
 
-  /// Unique ID of the window
+  /// Unique window ID
   String get windowId => _windowId;
 
   /// Whether the window is visible
@@ -464,7 +462,7 @@ class DraggableWindowController extends ChangeNotifier {
   /// Current size of the window
   Size get size => _size;
 
-  /// Whether the window is in focus (on top)
+  /// Whether the window is focused (on top)
   bool get isFocused => WindowManager().isOnTop(_windowId);
 
   /// Shows the window
@@ -520,7 +518,7 @@ class DraggableWindowController extends ChangeNotifier {
     }
   }
 
-  /// Brings the window to the top (focus)
+  /// Brings the window to the front (focus)
   void bringToFront() {
     WindowManager().bringToFront(_windowId);
   }
@@ -541,7 +539,7 @@ class DraggableWindowController extends ChangeNotifier {
     }
   }
 
-  /// Sets position and size without notifying (used in initialization)
+  /// Sets initial position and size without notifying (used in initialization)
   void setInitialState({Offset? position, Size? size}) {
     if (position != null) _position = position;
     if (size != null) _size = size;
@@ -577,7 +575,7 @@ enum _ResizeDirection {
 // MAIN WIDGET
 // ============================================================================
 
-/// A draggable and resizable floating window widget
+/// Draggable and resizable floating window widget
 class DraggableOverlayWindow extends StatefulWidget {
   /// Controller for programmatic control
   final DraggableWindowController controller;
@@ -585,13 +583,13 @@ class DraggableOverlayWindow extends StatefulWidget {
   /// Title displayed in the header (optional)
   final String? title;
 
-  /// Custom widget to display as title (optional, overrides [title])
+  /// Custom title widget (overrides [title] if provided)
   final Widget? titleWidget;
 
-  /// Custom widget displayed near the drag handle (optional)
+  /// Widget positioned at the start of the header
   final Widget? headerLeading;
 
-  /// Custom widget displayed before minimize/close buttons (optional)
+  /// Widget(s) positioned before system buttons
   final Widget? headerActions;
 
   /// Icon displayed in the header (optional)
@@ -658,7 +656,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     _controller.addListener(_onControllerChanged);
     _windowManager.addListener(_onWindowManagerChanged);
 
-    // Registra a janela se visível
+    // Registers the window if visible
     if (_controller.isVisible) {
       _windowManager.registerWindow(_controller.windowId,
           tag: _controller._tag);
@@ -666,7 +664,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
   }
 
   void _initializeSize() {
-    // Use the controller's size if already defined, otherwise use config
+    // Uses the controller size if defined, otherwise uses config
     if (_controller.size.width > 0 && _controller.size.height > 0) {
       _currentSize = _controller.size;
     } else {
@@ -686,7 +684,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
   }
 
   void _onControllerChanged() {
-    // Avoid update conflicts with the controller
+    // Prevents update conflicts with the controller
     if (mounted) {
       setState(() {
         _currentPosition = _controller.position;
@@ -730,7 +728,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
   void _handleDrag(DragUpdateDetails details) {
     final screenSize = MediaQuery.of(context).size;
     final width = _calculateWidth(context);
-    // Use minimizedHeight when minimized
+    // Usar minimizedHeight quando minimizado
     final height = _controller.isMinimized
         ? widget.config.minimizedHeight
         : _calculateHeight(context);
@@ -766,7 +764,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     double width = _currentSize.width;
     double height = _currentSize.height;
 
-    // FIX: Apply deltas according to direction
+    // Apply deltas according to direction
     switch (direction) {
       case _ResizeDirection.left:
       case _ResizeDirection.topLeft:
@@ -774,7 +772,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
         // When resizing from the left, move the left edge
         left += dx;
         width -=
-            dx; // Decreases width when moving right, increases when moving left
+            dx; // Decrease width when moving right, increase when moving left
         break;
       case _ResizeDirection.right:
       case _ResizeDirection.topRight:
@@ -793,7 +791,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
         // When resizing from the top, move the top edge
         top += dy;
         height -=
-            dy; // Decreases height when moving down, increases when moving up
+            dy; // Decrease height when moving down, increase when moving up
         break;
       case _ResizeDirection.bottom:
       case _ResizeDirection.bottomLeft:
@@ -810,8 +808,8 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       if (direction == _ResizeDirection.left ||
           direction == _ResizeDirection.topLeft ||
           direction == _ResizeDirection.bottomLeft) {
-        // If we are resizing from the left and reached the minimum,
-        // adjust the left position to maintain the minimum size
+        // If resizing from the left and minimum is reached,
+        // adjust left position to maintain minimum size
         left = _currentPosition.dx + (_currentSize.width - config.minWidth);
       }
       width = config.minWidth;
@@ -821,8 +819,8 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       if (direction == _ResizeDirection.top ||
           direction == _ResizeDirection.topLeft ||
           direction == _ResizeDirection.topRight) {
-        // If we are resizing from the top and reached the minimum,
-        // adjust the top position to maintain the minimum size
+        // If resizing from the top and minimum is reached,
+        // adjust top position to maintain minimum size
         top = _currentPosition.dy + (_currentSize.height - config.minHeight);
       }
       height = config.minHeight;
@@ -850,13 +848,13 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       height = maxH;
     }
 
-    // Ensure it doesn't go off-screen
+    // Ensure it doesn't leave the screen
     if (left < 0) {
-      width += left; // Adjusts width if left position is negative
+      width += left; // Adjust width if left position is negative
       left = 0;
     }
     if (top < 0) {
-      height += top; // Adjusts height if top position is negative
+      height += top; // Adjust height if top position is negative
       top = 0;
     }
 
@@ -865,7 +863,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       if (direction == _ResizeDirection.left ||
           direction == _ResizeDirection.topLeft ||
           direction == _ResizeDirection.bottomLeft) {
-        // If we are resizing from the left, adjust left
+        // If resizing from the left, adjust left
         left = screenSize.width - width;
         if (left < 0) {
           left = 0;
@@ -882,7 +880,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       if (direction == _ResizeDirection.top ||
           direction == _ResizeDirection.topLeft ||
           direction == _ResizeDirection.topRight) {
-        // If we are resizing from the top, adjust top
+        // If resizing from the top, adjust top
         top = screenSize.height - height;
         if (top < 0) {
           top = 0;
@@ -921,7 +919,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     final isMinimized = _controller.isMinimized;
     final isFocused = _windowManager.isOnTop(_controller.windowId);
     // When minimized, use only the header height
-    // Ensure height is never negative
+    // Ensure the height is never negative
     final height = (isMinimized
             ? widget.config.minimizedHeight
             : _calculateHeight(context))
@@ -938,8 +936,8 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
         : (config.borderColor ?? Colors.grey.shade300);
     final elevation = isFocused ? config.focusedElevation : config.elevation;
 
-    // Use of Align + Transform avoids ParentData errors in Stack
-    // and ensures the origin is (0,0) for the offset to work correctly
+    // Use Align + Transform to avoid ParentData errors in the Stack
+    // and ensure the origin is (0,0) for the offset to work correctly
     return Align(
       alignment: Alignment.topLeft,
       child: Transform.translate(
@@ -952,10 +950,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
             shadowColor: isFocused
                 ? theme.colorScheme.primary.withValues(alpha: 0.3)
                 : null,
-            child: AnimatedContainer(
-              // No animation to avoid overflow issues
-              duration: Duration.zero,
-              curve: Curves.linear,
+            child: Container(
               width: width,
               height: height,
               decoration: BoxDecoration(
@@ -984,7 +979,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                   Column(
                     mainAxisSize: MainAxisSize.max,
                     children: [
-                      // When minimized, the header should expand to fill all space
+                      // When minimized, the header should expand to fill the space
                       if (isMinimized)
                         Expanded(
                           child: _buildHeader(
@@ -1007,15 +1002,17 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                             borderRadius: BorderRadius.vertical(
                               bottom: Radius.circular(config.borderRadius),
                             ),
-                            child: config.enableScrolling
-                                ? SingleChildScrollView(
-                                    padding: config.contentPadding,
-                                    child: widget.content,
-                                  )
-                                : Padding(
-                                    padding: config.contentPadding,
-                                    child: widget.content,
-                                  ),
+                            child: RepaintBoundary(
+                              child: config.enableScrolling
+                                  ? SingleChildScrollView(
+                                      padding: config.contentPadding,
+                                      child: widget.content,
+                                    )
+                                  : Padding(
+                                      padding: config.contentPadding,
+                                      child: widget.content,
+                                    ),
+                            ),
                           ),
                         ),
                       ],
@@ -1138,7 +1135,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       child: GestureDetector(
         onPanUpdate: (details) => _handleResize(direction, details),
         onPanStart: (details) {
-          // FIX: Bring to front but do NOT call _handleDragStart
+          // CORRECTION: Bring to front but do NOT call _handleDragStart
           // which caused conflict with resize
           _controller.bringToFront();
           widget.onFocus?.call();
@@ -1177,17 +1174,8 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       onPanUpdate: _handleDrag,
       onPanEnd: (_) {},
       onPanCancel: () {},
-      onDoubleTap: () {
-        if (_controller.isMinimized) {
-          _controller.restore();
-          widget.onRestored?.call();
-        } else {
-          _controller.minimize();
-          widget.onMinimized?.call();
-        }
-      },
       child: Container(
-        // Quando expandHeight é true, não definir altura fixa (deixa o Expanded controlar)
+        // When expandHeight is true, do not set fixed height (let Expanded control)
         height: expandHeight ? null : config.minimizedHeight,
         padding: padding,
         decoration: BoxDecoration(
@@ -1203,29 +1191,6 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
             ? _buildMinimizedHeader(theme, isFocused)
             : _buildExpandedHeader(theme, isFocused),
       ),
-    );
-  }
-
-  Widget _buildTitleWidget(ThemeData theme, bool isFocused, bool isMinimized) {
-    if (widget.titleWidget != null) {
-      return widget.titleWidget!;
-    }
-
-    if (widget.title == null) return const SizedBox.shrink();
-
-    return Text(
-      widget.title!,
-      style: widget.config.headerTextStyle ??
-          (isMinimized
-              ? theme.textTheme.titleSmall?.copyWith(
-                  fontSize: 13,
-                  fontWeight: isFocused ? FontWeight.w600 : FontWeight.normal,
-                )
-              : theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: isFocused ? FontWeight.w600 : FontWeight.normal,
-                )),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -1252,10 +1217,6 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
           Expanded(child: _buildTitleWidget(theme, isFocused, true)),
         ] else
           const Spacer(),
-        if (widget.headerActions != null) ...[
-          widget.headerActions!,
-          const SizedBox(width: 4),
-        ],
         const SizedBox(width: 4),
         _buildHeaderButton(
           icon: widget.config.maximizeIcon,
@@ -1276,7 +1237,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
             widget.onClose?.call();
           },
           isClose: true,
-          color: null, // Close always has its own color or uses default
+          color: null,
           isFocused: isFocused,
         ),
       ],
@@ -1332,6 +1293,25 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     );
   }
 
+  Widget _buildTitleWidget(ThemeData theme, bool isFocused, bool isMinimized) {
+    if (widget.titleWidget != null) return widget.titleWidget!;
+
+    return Text(
+      widget.title ?? '',
+      style: widget.config.headerTextStyle ??
+          (isMinimized
+              ? theme.textTheme.titleSmall?.copyWith(
+                  fontSize: 13,
+                  fontWeight: isFocused ? FontWeight.w600 : FontWeight.normal,
+                )
+              : theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: isFocused ? FontWeight.w600 : FontWeight.normal,
+                )),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
   Widget _buildHeaderButton({
     required IconData icon,
     required String tooltip,
@@ -1342,13 +1322,16 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
   }) {
     return Tooltip(
       message: tooltip,
-      child: InkWell(
+      child: GestureDetector(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        behavior: HitTestBehavior.opaque,
         child: Container(
-          width: 24,
-          height: 24,
-          padding: const EdgeInsets.all(2),
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+          ),
           child: Icon(
             icon,
             size: 16,
@@ -1366,30 +1349,208 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     bool isClose = false,
     Color? color,
   }) {
-    return IconButton(
-      tooltip: tooltip,
-      onPressed: onPressed,
-      icon: Icon(icon),
-      iconSize: 20,
-      padding: const EdgeInsets.all(4),
-      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-      color: isClose ? Colors.red.shade400 : color,
-      hoverColor: isClose ? Colors.red.shade50 : null,
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onPressed,
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          width: 32,
+          height: 32,
+          alignment: Alignment.center,
+          child: Icon(
+            icon,
+            size: 20,
+            color: isClose ? Colors.red.shade400 : color,
+          ),
+        ),
+      ),
     );
   }
 }
 
 // ============================================================================
-// WIDGET CONTAINER (to manage multiple windows with correct z-index)
+// WINDOW SCOPE
+// ============================================================================
+
+/// A container widget that manages multiple windows with automatic z-index ordering.
+class WindowScope extends StatefulWidget {
+  final Widget child;
+  final List<WindowEntry> windows;
+
+  const WindowScope({
+    super.key,
+    required this.child,
+    this.windows = const [],
+  });
+
+  @override
+  State<WindowScope> createState() => _WindowScopeState();
+}
+
+class _WindowScopeState extends State<WindowScope> {
+  final WindowManager _windowManager = WindowManager();
+
+  @override
+  void initState() {
+    super.initState();
+    _windowManager.addListener(_onWindowManagerChanged);
+  }
+
+  @override
+  void dispose() {
+    _windowManager.removeListener(_onWindowManagerChanged);
+    super.dispose();
+  }
+
+  void _onWindowManagerChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final stackOrder = <String, int>{};
+    for (int i = 0; i < _windowManager.windowStack.length; i++) {
+      stackOrder[_windowManager.windowStack[i]] = i;
+    }
+
+    final visibleWindows =
+        widget.windows.where((w) => w.controller.isVisible).toList();
+
+    visibleWindows.sort((a, b) {
+      final zIndexA = stackOrder[a.controller.windowId] ?? -1;
+      final zIndexB = stackOrder[b.controller.windowId] ?? -1;
+      return zIndexA.compareTo(zIndexB);
+    });
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        widget.child,
+        ...visibleWindows.map((entry) => _WindowWidget(
+              key: ValueKey(entry.controller.windowId),
+              entry: entry,
+            )),
+      ],
+    );
+  }
+}
+
+/// Represents a window entry for use with [WindowScope].
+class WindowEntry {
+  final DraggableWindowController controller;
+  final Widget content;
+  final String? title;
+  final Widget? titleWidget;
+  final Widget? headerLeading;
+  final Widget? headerActions;
+  final IconData? icon;
+  final DraggableWindowConfig config;
+  final VoidCallback? onFocus;
+  final VoidCallback? onClose;
+  final VoidCallback? onMinimized;
+  final VoidCallback? onRestored;
+  final ValueChanged<Offset>? onPositionChanged;
+  final ValueChanged<Size>? onSizeChanged;
+
+  const WindowEntry({
+    required this.controller,
+    required this.content,
+    this.title,
+    this.titleWidget,
+    this.headerLeading,
+    this.headerActions,
+    this.icon,
+    this.config = const DraggableWindowConfig(),
+    this.onFocus,
+    this.onClose,
+    this.onMinimized,
+    this.onRestored,
+    this.onPositionChanged,
+    this.onSizeChanged,
+  });
+}
+
+/// Internal widget that renders a single window from WindowScope.
+class _WindowWidget extends StatefulWidget {
+  final WindowEntry entry;
+
+  const _WindowWidget({
+    super.key,
+    required this.entry,
+  });
+
+  @override
+  State<_WindowWidget> createState() => _WindowWidgetState();
+}
+
+class _WindowWidgetState extends State<_WindowWidget> {
+  final WindowManager _windowManager = WindowManager();
+
+  DraggableWindowController get _controller => widget.entry.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onControllerChanged);
+    _windowManager.addListener(_onWindowManagerChanged);
+    _windowManager.registerWindow(_controller.windowId, tag: _controller._tag);
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onControllerChanged);
+    _windowManager.removeListener(_onWindowManagerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _onWindowManagerChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableOverlayWindow(
+      key: ValueKey(_controller.windowId),
+      controller: _controller,
+      title: widget.entry.title,
+      titleWidget: widget.entry.titleWidget,
+      headerLeading: widget.entry.headerLeading,
+      headerActions: widget.entry.headerActions,
+      icon: widget.entry.icon,
+      content: widget.entry.content,
+      config: widget.entry.config,
+      onFocus: () {
+        _windowManager.bringToFront(_controller.windowId);
+        widget.entry.onFocus?.call();
+      },
+      onClose: () {
+        _controller.hide();
+        widget.entry.onClose?.call();
+      },
+      onMinimized: widget.entry.onMinimized,
+      onRestored: widget.entry.onRestored,
+      onPositionChanged: widget.entry.onPositionChanged,
+      onSizeChanged: widget.entry.onSizeChanged,
+    );
+  }
+}
+
+// ============================================================================
+// WINDOW CONTAINER (for managing multiple windows with correct z-index)
 // ============================================================================
 
 /// Container that manages multiple windows with automatic z-index
-/// FIX: Uses IndexedStack to maintain correct positions
+/// CORRECTION: Uses IndexedStack to maintain correct positions
 class OverlayWindowStack extends StatefulWidget {
   /// List of windows to be displayed
   final List<DraggableOverlayWindow> windows;
 
-  /// Main content (below the windows)
+  /// Main content (below windows)
   final Widget? child;
 
   const OverlayWindowStack({super.key, required this.windows, this.child});
@@ -1419,7 +1580,7 @@ class _OverlayWindowStackState extends State<OverlayWindowStack> {
 
   @override
   Widget build(BuildContext context) {
-    // FIX: Do not reorder widgets, only control visual order
+    // CORRECTION: Do not reorder widgets, only control visual order
     // using the windowStack order to determine which one is "above"
 
     // Create a map of windowId -> index in the stack
@@ -1440,7 +1601,7 @@ class _OverlayWindowStackState extends State<OverlayWindowStack> {
       child: Stack(
         children: [
           if (widget.child != null) Positioned.fill(child: widget.child!),
-          // FIX: Windows must have keys assigned upon creation
+          // CORRECTION: Windows must have keys assigned at creation
           ...sortedWindows,
         ],
       ),

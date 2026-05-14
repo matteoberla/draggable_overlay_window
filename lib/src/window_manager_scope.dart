@@ -166,6 +166,9 @@ class _WindowManagerScopeState extends State<WindowManagerScope> {
     required String id,
     required Widget content,
     String? title,
+    Widget? titleWidget,
+    Widget? headerLeading,
+    Widget? headerActions,
     IconData? icon,
     DraggableWindowConfig? config,
     Size? initialSize,
@@ -206,6 +209,9 @@ class _WindowManagerScopeState extends State<WindowManagerScope> {
         controller: controller,
         content: content,
         title: title,
+        titleWidget: titleWidget,
+        headerLeading: headerLeading,
+        headerActions: headerActions,
         icon: icon,
         config: config ?? widget.defaultConfig,
         onClose: onClose,
@@ -283,6 +289,9 @@ class _WindowManagerScopeState extends State<WindowManagerScope> {
                 controller: w.controller,
                 content: w.content,
                 title: w.title,
+                titleWidget: w.titleWidget,
+                headerLeading: w.headerLeading,
+                headerActions: w.headerActions,
                 icon: w.icon,
                 config: w.config,
                 onClose: () => _closeWindow(w.id),
@@ -355,6 +364,9 @@ class WindowManagerScopeController {
     required String id,
     required Widget content,
     String? title,
+    Widget? titleWidget,
+    Widget? headerLeading,
+    Widget? headerActions,
     IconData? icon,
     DraggableWindowConfig? config,
     Size? initialSize,
@@ -368,6 +380,9 @@ class WindowManagerScopeController {
       id: id,
       content: content,
       title: title,
+      titleWidget: titleWidget,
+      headerLeading: headerLeading,
+      headerActions: headerActions,
       icon: icon,
       config: config,
       initialSize: initialSize,
@@ -445,6 +460,9 @@ class WindowManagerScopeController {
     required String id,
     required Widget content,
     String? title,
+    Widget? titleWidget,
+    Widget? headerLeading,
+    Widget? headerActions,
     IconData? icon,
     DraggableWindowConfig? config,
     Size? initialSize,
@@ -457,6 +475,9 @@ class WindowManagerScopeController {
         id: id,
         content: content,
         title: title,
+        titleWidget: titleWidget,
+        headerLeading: headerLeading,
+        headerActions: headerActions,
         icon: icon,
         config: config,
         initialSize: initialSize,
@@ -516,6 +537,9 @@ class _ManagedWindow {
   final DraggableWindowController controller;
   final Widget content;
   final String? title;
+  final Widget? titleWidget;
+  final Widget? headerLeading;
+  final Widget? headerActions;
   final IconData? icon;
   final DraggableWindowConfig config;
   final VoidCallback? onClose;
@@ -527,6 +551,9 @@ class _ManagedWindow {
     required this.controller,
     required this.content,
     this.title,
+    this.titleWidget,
+    this.headerLeading,
+    this.headerActions,
     this.icon,
     required this.config,
     this.onClose,
