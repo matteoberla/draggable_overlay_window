@@ -236,6 +236,9 @@ class DraggableWindowConfig {
   /// Whether to show the header
   final bool showHeader;
 
+  /// Whether to show the close button
+  final bool showCloseButton;
+
   const DraggableWindowConfig({
     this.minimizedHeight = 48.0,
     this.borderRadius = 12.0,
@@ -276,6 +279,7 @@ class DraggableWindowConfig {
     this.language = WindowLanguage.en,
     this.centerInitialPosition = true,
     this.showHeader = true,
+    this.showCloseButton = true,
   });
 
   /// Border width
@@ -365,6 +369,7 @@ class DraggableWindowConfig {
     WindowLanguage? language,
     bool? centerInitialPosition,
     bool? showHeader,
+    bool? showCloseButton,
   }) {
     return DraggableWindowConfig(
       minimizedHeight: minimizedHeight ?? this.minimizedHeight,
@@ -409,6 +414,7 @@ class DraggableWindowConfig {
       centerInitialPosition:
           centerInitialPosition ?? this.centerInitialPosition,
       showHeader: showHeader ?? this.showHeader,
+      showCloseButton: showCloseButton ?? this.showCloseButton,
     );
   }
 }
@@ -1283,7 +1289,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
         if (widget.config.showDragHandle)
           Icon(widget.config.dragHandleIcon, size: 14, color: iconColor),
         if (widget.headerLeading != null) ...[
-          const SizedBox(width: 4),
+          if (widget.config.showDragHandle) const SizedBox(width: 4),
           widget.headerLeading!,
         ],
         if (widget.icon != null) ...[
@@ -1306,18 +1312,20 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
           color: buttonsColor,
           isFocused: isFocused,
         ),
-        const SizedBox(width: 2),
-        _buildHeaderButton(
-          icon: widget.config.closeIcon,
-          tooltip: _WindowLocalizations.get('close', lang),
-          onTap: () {
-            _controller.hide();
-            widget.onClose?.call();
-          },
-          isClose: true,
-          color: null,
-          isFocused: isFocused,
-        ),
+        if (widget.config.showCloseButton) ...[
+          const SizedBox(width: 2),
+          _buildHeaderButton(
+            icon: widget.config.closeIcon,
+            tooltip: _WindowLocalizations.get('close', lang),
+            onTap: () {
+              _controller.hide();
+              widget.onClose?.call();
+            },
+            isClose: true,
+            color: null,
+            isFocused: isFocused,
+          ),
+        ],
       ],
     );
   }
@@ -1358,15 +1366,16 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
             },
             color: widget.config.headerButtonsColor,
           ),
-        _buildHeaderIconButton(
-          icon: widget.config.closeIcon,
-          tooltip: _WindowLocalizations.get('close', lang),
-          onPressed: () {
-            _controller.hide();
-            widget.onClose?.call();
-          },
-          isClose: true,
-        ),
+        if (widget.config.showCloseButton)
+          _buildHeaderIconButton(
+            icon: widget.config.closeIcon,
+            tooltip: _WindowLocalizations.get('close', lang),
+            onPressed: () {
+              _controller.hide();
+              widget.onClose?.call();
+            },
+            isClose: true,
+          ),
       ],
     );
   }
