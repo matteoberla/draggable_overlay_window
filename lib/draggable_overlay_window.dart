@@ -233,6 +233,9 @@ class DraggableWindowConfig {
   /// Whether to center the window on initial opening
   final bool centerInitialPosition;
 
+  /// Whether to show the header
+  final bool showHeader;
+
   const DraggableWindowConfig({
     this.minimizedHeight = 48.0,
     this.borderRadius = 12.0,
@@ -272,6 +275,7 @@ class DraggableWindowConfig {
     this.showDragHandle = true,
     this.language = WindowLanguage.en,
     this.centerInitialPosition = true,
+    this.showHeader = true,
   });
 
   /// Border width
@@ -360,6 +364,7 @@ class DraggableWindowConfig {
     bool? showDragHandle,
     WindowLanguage? language,
     bool? centerInitialPosition,
+    bool? showHeader,
   }) {
     return DraggableWindowConfig(
       minimizedHeight: minimizedHeight ?? this.minimizedHeight,
@@ -403,6 +408,7 @@ class DraggableWindowConfig {
       language: language ?? this.language,
       centerInitialPosition:
           centerInitialPosition ?? this.centerInitialPosition,
+      showHeader: showHeader ?? this.showHeader,
     );
   }
 }
@@ -1059,14 +1065,16 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                           ),
                         )
                       else ...[
-                        _buildHeader(context, isFocused, expandHeight: false),
-                        if (config.showDivider)
-                          Divider(
-                            height: config.dividerHeight,
-                            thickness: config.dividerHeight,
-                            color: config.dividerColor ??
-                                borderColor.withValues(alpha: 0.5),
-                          ),
+                        if (config.showHeader) ...[
+                          _buildHeader(context, isFocused, expandHeight: false),
+                          if (config.showDivider)
+                            Divider(
+                              height: config.dividerHeight,
+                              thickness: config.dividerHeight,
+                              color: config.dividerColor ??
+                                  borderColor.withValues(alpha: 0.5),
+                            ),
+                        ],
                         Expanded(
                           child: ClipRRect(
                             borderRadius: BorderRadius.vertical(

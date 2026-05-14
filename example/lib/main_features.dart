@@ -222,6 +222,7 @@ class DemoPage extends StatelessWidget {
                             child: Icon(Icons.notifications_none, size: 18)),
                         content: const DemoContent(),
                         config: const DraggableWindowConfig(
+                          showHeader: false,
                           language: WindowLanguage.es, // Spanish
                           showMinimizeButton: true,
                           showDragHandle: true,
