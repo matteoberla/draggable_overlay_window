@@ -221,11 +221,10 @@ class DemoPage extends StatelessWidget {
                             label: Text('3'),
                             child: Icon(Icons.notifications_none, size: 18)),
                         content: const DemoContent(),
-                        config: const DraggableWindowConfig(
-                          showHeader: false,
+                        config: DraggableWindowConfig(
                           language: WindowLanguage.es, // Spanish
                           showMinimizeButton: true,
-                          showDragHandle: true,
+                          showDragHandle: false,
                           borderRadius: 16,
                           headerBackgroundColor: Color(0xFFFFEBEE),
                           centerInitialPosition: false,

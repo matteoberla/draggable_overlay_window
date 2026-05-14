@@ -233,11 +233,12 @@ class DraggableWindowConfig {
   /// Whether to center the window on initial opening
   final bool centerInitialPosition;
 
-  /// Whether to show the header
-  final bool showHeader;
-
   /// Whether to show the close button
   final bool showCloseButton;
+
+  /// Custom header builder (overrides the entire header content but keeps drag logic)
+  /// Receives [isMinimized] as a parameter to allow different UIs
+  final Widget? Function(bool isMinimized)? customHeader;
 
   const DraggableWindowConfig({
     this.minimizedHeight = 48.0,
@@ -278,8 +279,8 @@ class DraggableWindowConfig {
     this.showDragHandle = true,
     this.language = WindowLanguage.en,
     this.centerInitialPosition = true,
-    this.showHeader = true,
     this.showCloseButton = true,
+    this.customHeader,
   });
 
   /// Border width
@@ -368,8 +369,8 @@ class DraggableWindowConfig {
     bool? showDragHandle,
     WindowLanguage? language,
     bool? centerInitialPosition,
-    bool? showHeader,
     bool? showCloseButton,
+    Widget? Function(bool isMinimized)? customHeader,
   }) {
     return DraggableWindowConfig(
       minimizedHeight: minimizedHeight ?? this.minimizedHeight,
@@ -413,8 +414,8 @@ class DraggableWindowConfig {
       language: language ?? this.language,
       centerInitialPosition:
           centerInitialPosition ?? this.centerInitialPosition,
-      showHeader: showHeader ?? this.showHeader,
       showCloseButton: showCloseButton ?? this.showCloseButton,
+      customHeader: customHeader ?? this.customHeader,
     );
   }
 }
@@ -617,6 +618,11 @@ class DraggableOverlayWindow extends StatefulWidget {
   /// Window content
   final Widget content;
 
+  /// Custom header builder (overrides the entire header content but keeps drag logic)
+  /// Receives [isMinimized] as a parameter to allow different UIs
+  /// If provided, this overrides [title], [titleWidget], [headerLeading], [headerActions], [icon]
+  final Widget? Function(bool isMinimized)? customHeader;
+
   /// Custom configurations
   final DraggableWindowConfig config;
 
@@ -647,6 +653,7 @@ class DraggableOverlayWindow extends StatefulWidget {
     this.headerLeading,
     this.headerActions,
     this.icon,
+    this.customHeader,
     this.config = const DraggableWindowConfig(),
     this.onFocus,
     this.onClose,
@@ -1071,16 +1078,14 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                           ),
                         )
                       else ...[
-                        if (config.showHeader) ...[
-                          _buildHeader(context, isFocused, expandHeight: false),
-                          if (config.showDivider)
-                            Divider(
-                              height: config.dividerHeight,
-                              thickness: config.dividerHeight,
-                              color: config.dividerColor ??
-                                  borderColor.withValues(alpha: 0.5),
-                            ),
-                        ],
+                        _buildHeader(context, isFocused, expandHeight: false),
+                        if (config.showDivider)
+                          Divider(
+                            height: config.dividerHeight,
+                            thickness: config.dividerHeight,
+                            color: config.dividerColor ??
+                                borderColor.withValues(alpha: 0.5),
+                          ),
                         Expanded(
                           child: ClipRRect(
                             borderRadius: BorderRadius.vertical(
@@ -1271,9 +1276,11 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
           ),
           color: headerColor,
         ),
-        child: isMinimized
-            ? _buildMinimizedHeader(theme, isFocused)
-            : _buildExpandedHeader(theme, isFocused),
+        child: widget.customHeader?.call(isMinimized) ??
+            widget.config.customHeader?.call(isMinimized) ??
+            (isMinimized
+                ? _buildMinimizedHeader(theme, isFocused)
+                : _buildExpandedHeader(theme, isFocused)),
       ),
     );
   }
@@ -1532,6 +1539,7 @@ class WindowEntry {
   final Widget? headerLeading;
   final Widget? headerActions;
   final IconData? icon;
+  final Widget? Function(bool isMinimized)? customHeader;
   final DraggableWindowConfig config;
   final VoidCallback? onFocus;
   final VoidCallback? onClose;
@@ -1548,6 +1556,7 @@ class WindowEntry {
     this.headerLeading,
     this.headerActions,
     this.icon,
+    this.customHeader,
     this.config = const DraggableWindowConfig(),
     this.onFocus,
     this.onClose,
@@ -1609,6 +1618,7 @@ class _WindowWidgetState extends State<_WindowWidget> {
       headerLeading: widget.entry.headerLeading,
       headerActions: widget.entry.headerActions,
       icon: widget.entry.icon,
+      customHeader: widget.entry.customHeader,
       content: widget.entry.content,
       config: widget.entry.config,
       onFocus: () {
