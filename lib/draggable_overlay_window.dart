@@ -197,11 +197,11 @@ class DraggableWindowConfig {
   /// Maximum height of the window (null = no limit)
   final double? maxHeight;
 
-  /// Initial width of the window
-  final double initialWidth;
+  /// Initial width of the window (null = follow content)
+  final double? initialWidth;
 
-  /// Initial height of the window
-  final double initialHeight;
+  /// Initial height of the window (null = follow content)
+  final double? initialHeight;
 
   /// Function to calculate width based on screen width (overrides initialWidth)
   final double Function(double screenWidth)? widthCalculator;
@@ -253,12 +253,12 @@ class DraggableWindowConfig {
     this.contentPadding = const EdgeInsets.only(bottom: 8),
     this.resizable = true,
     this.resizeHandleSize = 8.0,
-    this.minWidth = 200.0,
-    this.minHeight = 150.0,
+    this.minWidth = 0.0,
+    this.minHeight = 0.0,
     this.maxWidth,
     this.maxHeight,
-    this.initialWidth = 400.0,
-    this.initialHeight = 350.0,
+    this.initialWidth,
+    this.initialHeight,
     this.widthCalculator,
     this.heightCalculator,
     this.minimizeIcon = Icons.remove,
@@ -325,8 +325,8 @@ class DraggableWindowConfig {
     contentPadding: EdgeInsets.only(bottom: 4),
     minWidth: 150.0,
     minHeight: 100.0,
-    initialWidth: 300.0,
-    initialHeight: 250.0,
+    initialWidth: null,
+    initialHeight: null,
   );
 
   /// Creates a copy with modified values
@@ -437,7 +437,7 @@ class DraggableWindowController extends ChangeNotifier {
   /// Factory constructor
   /// If [tag] is provided and an instance already exists, it returns the existing one.
   factory DraggableWindowController({
-    Size initialSize = const Size(400, 350),
+    Size initialSize = Size.zero,
     Offset initialPosition = const Offset(-9999, -9999),
     String? tag,
   }) {
@@ -459,7 +459,7 @@ class DraggableWindowController extends ChangeNotifier {
   }
 
   DraggableWindowController._internal({
-    Size initialSize = const Size(400, 350),
+    Size initialSize = Size.zero,
     Offset initialPosition = const Offset(-9999, -9999),
     String? tag,
   })  : _size = initialSize,
@@ -671,7 +671,9 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
   late Offset _currentPosition;
   late Size _currentSize;
   bool _isPositionInitialized = false;
+  bool _isReady = false;
   final WindowManager _windowManager = WindowManager();
+  final GlobalKey _containerKey = GlobalKey();
 
   DraggableWindowController get _controller => widget.controller;
 
@@ -685,8 +687,28 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       _isPositionInitialized = true;
     } else {
       // Temporary fallback until build() can calculate center or use default
-      _currentPosition = const Offset(50, 50);
       _isPositionInitialized = false;
+    }
+
+    if (!_isPositionInitialized && widget.config.centerInitialPosition) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _captureInitialCenteredPosition());
+    } else {
+      // Even if not centering, if size is zero (intrinsic), capture it
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final box =
+            _containerKey.currentContext?.findRenderObject() as RenderBox?;
+        if (box != null && box.hasSize) {
+          setState(() {
+            _currentSize = box.size;
+            _isReady = true;
+          });
+          _controller.setInitialState(size: box.size);
+        } else {
+          setState(() => _isReady = true);
+        }
+      });
     }
     _controller.addListener(_onControllerChanged);
     _windowManager.addListener(_onWindowManagerChanged);
@@ -698,6 +720,31 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     }
   }
 
+  void _captureInitialCenteredPosition() {
+    if (!mounted || _isPositionInitialized) return;
+
+    final box = _containerKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box != null && box.hasSize) {
+      final screenSize = MediaQuery.of(context).size;
+      final actualSize = box.size;
+
+      final centerX = (screenSize.width - actualSize.width) / 2;
+      final centerY = (screenSize.height - actualSize.height) / 2;
+      final centerPosition = Offset(centerX, centerY);
+
+      setState(() {
+        _currentPosition = centerPosition;
+        _currentSize = actualSize;
+        _isPositionInitialized = true;
+        _isReady = true;
+      });
+
+      _controller.setInitialState(position: centerPosition, size: actualSize);
+    } else {
+      setState(() => _isReady = true);
+    }
+  }
+
   void _initializeSize() {
     // Uses the controller size if defined, otherwise uses config
     Size initialSize;
@@ -705,21 +752,25 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       initialSize = _controller.size;
     } else {
       initialSize = Size(
-        widget.config.initialWidth,
-        widget.config.initialHeight,
+        widget.config.initialWidth ?? 0,
+        widget.config.initialHeight ?? 0,
       );
     }
 
     // Apply constraints
     _currentSize = Size(
-      initialSize.width.clamp(
-        widget.config.minWidth,
-        widget.config.maxWidth ?? double.infinity,
-      ),
-      initialSize.height.clamp(
-        widget.config.minHeight,
-        widget.config.maxHeight ?? double.infinity,
-      ),
+      initialSize.width > 0
+          ? initialSize.width.clamp(
+              widget.config.minWidth,
+              widget.config.maxWidth ?? double.infinity,
+            )
+          : 0,
+      initialSize.height > 0
+          ? initialSize.height.clamp(
+              widget.config.minHeight,
+              widget.config.maxHeight ?? double.infinity,
+            )
+          : 0,
     );
 
     _controller.setInitialState(size: _currentSize);
@@ -739,14 +790,18 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
         _currentPosition = _controller.position;
         // Clamp size from controller
         _currentSize = Size(
-          _controller.size.width.clamp(
-            widget.config.minWidth,
-            widget.config.maxWidth ?? double.infinity,
-          ),
-          _controller.size.height.clamp(
-            widget.config.minHeight,
-            widget.config.maxHeight ?? double.infinity,
-          ),
+          _controller.size.width > 0
+              ? _controller.size.width.clamp(
+                  widget.config.minWidth,
+                  widget.config.maxWidth ?? double.infinity,
+                )
+              : 0,
+          _controller.size.height > 0
+              ? _controller.size.height.clamp(
+                  widget.config.minHeight,
+                  widget.config.maxHeight ?? double.infinity,
+                )
+              : 0,
         );
       });
     }
@@ -774,6 +829,18 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     return _currentSize.height;
   }
 
+  Size _getActualSize() {
+    if (_currentSize.width > 0 && _currentSize.height > 0) {
+      return _currentSize;
+    }
+    final RenderBox? box =
+        _containerKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box != null && box.hasSize) {
+      return box.size;
+    }
+    return _currentSize; // Size.zero
+  }
+
   void _handleTap() {
     _controller.bringToFront();
     widget.onFocus?.call();
@@ -786,11 +853,12 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
 
   void _handleDrag(DragUpdateDetails details) {
     final screenSize = MediaQuery.of(context).size;
-    final width = _calculateWidth(context);
-    // Usar minimizedHeight quando minimizado
+    final actualSize = _getActualSize();
+    final width = actualSize.width;
+    // Use minimizedHeight when minimized
     final height = _controller.isMinimized
         ? widget.config.minimizedHeight
-        : _calculateHeight(context);
+        : actualSize.height;
 
     final newPosition = Offset(
       (_currentPosition.dx + details.delta.dx).clamp(
@@ -818,6 +886,10 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     final dy = details.delta.dy;
 
     // Current position and size
+    if (_currentSize.width <= 0 || _currentSize.height <= 0) {
+      _currentSize = _getActualSize();
+    }
+
     double left = _currentPosition.dx;
     double top = _currentPosition.dy;
     double width = _currentSize.width;
@@ -974,34 +1046,11 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
 
     final screenSize = MediaQuery.of(context).size;
 
-    // Initialize position to center if requested and not yet initialized
-    if (!_isPositionInitialized && widget.config.centerInitialPosition) {
-      final width = _calculateWidth(context).clamp(
-        widget.config.minWidth,
-        widget.config.maxWidth ?? double.infinity,
-      );
-      final height = _calculateHeight(context).clamp(
-        widget.config.minHeight,
-        widget.config.maxHeight ?? double.infinity,
-      );
+    // If centering is enabled but not yet initialized, use Align.center
+    final bool useInitialCentering =
+        !_isPositionInitialized && widget.config.centerInitialPosition;
 
-      _currentPosition = Offset(
-        (screenSize.width - width) / 2,
-        (screenSize.height - height) / 2,
-      );
-      _controller.setInitialState(position: _currentPosition);
-      _isPositionInitialized = true;
-    } else if (!_isPositionInitialized) {
-      // If centering is disabled and not yet initialized, use default
-      _currentPosition = const Offset(50, 50);
-      _controller.setInitialState(position: _currentPosition);
-      _isPositionInitialized = true;
-    }
-
-    final width = _calculateWidth(context).clamp(
-      widget.config.minWidth,
-      widget.config.maxWidth ?? double.infinity,
-    );
+    final width = _calculateWidth(context);
     final isMinimized = _controller.isMinimized;
     final isFocused = _windowManager.isOnTop(_controller.windowId);
 
@@ -1009,10 +1058,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     // When expanded, respect minHeight and maxHeight
     final height = isMinimized
         ? widget.config.minimizedHeight
-        : _calculateHeight(context).clamp(
-            widget.config.minHeight,
-            widget.config.maxHeight ?? double.infinity,
-          );
+        : _calculateHeight(context);
 
     final theme = Theme.of(context);
     final config = widget.config;
@@ -1025,12 +1071,13 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
         : (config.borderColor ?? Colors.grey.shade300);
     final elevation = isFocused ? config.focusedElevation : config.elevation;
 
-    // Use Align + Transform to avoid ParentData errors in the Stack
-    // and ensure the origin is (0,0) for the offset to work correctly
-    return Align(
-      alignment: Alignment.topLeft,
-      child: Transform.translate(
-        offset: _currentPosition,
+    // Wrap in Opacity to hide the window while calculating initial intrinsic size
+    return Opacity(
+      opacity: _isReady ? 1.0 : 0.0,
+      child: Align(
+        alignment: useInitialCentering ? Alignment.center : Alignment.topLeft,
+        child: Transform.translate(
+        offset: useInitialCentering ? Offset.zero : _currentPosition,
         child: GestureDetector(
           onTap: _handleTap,
           child: Material(
@@ -1040,8 +1087,15 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                 ? theme.colorScheme.primary.withValues(alpha: 0.3)
                 : null,
             child: Container(
-              width: width,
-              height: height,
+              key: _containerKey,
+              constraints: BoxConstraints(
+                minWidth: config.minWidth,
+                minHeight: isMinimized ? height : config.minHeight,
+                maxWidth: config.maxWidth ?? double.infinity,
+                maxHeight: isMinimized ? height : (config.maxHeight ?? double.infinity),
+              ),
+              width: isMinimized ? width : (width > 0 ? width : null),
+              height: isMinimized ? height : (height > 0 ? height : null),
               decoration: BoxDecoration(
                 color: backgroundColor,
                 borderRadius: borderRadius,
@@ -1066,16 +1120,14 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                 children: [
                   // Main content
                   Column(
-                    mainAxisSize: MainAxisSize.max,
+                    mainAxisSize: height > 0 ? MainAxisSize.max : MainAxisSize.min,
                     children: [
                       // When minimized, the header should expand to fill the space
                       if (isMinimized)
-                        Expanded(
-                          child: _buildHeader(
-                            context,
-                            isFocused,
-                            expandHeight: true,
-                          ),
+                        _buildHeader(
+                          context,
+                          isFocused,
+                          expandHeight: true,
                         )
                       else ...[
                         _buildHeader(context, isFocused, expandHeight: false),
@@ -1086,24 +1138,11 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                             color: config.dividerColor ??
                                 borderColor.withValues(alpha: 0.5),
                           ),
-                        Expanded(
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.vertical(
-                              bottom: Radius.circular(config.borderRadius),
-                            ),
-                            child: RepaintBoundary(
-                              child: config.enableScrolling
-                                  ? SingleChildScrollView(
-                                      padding: config.contentPadding,
-                                      child: widget.content,
-                                    )
-                                  : Padding(
-                                      padding: config.contentPadding,
-                                      child: widget.content,
-                                    ),
-                            ),
-                          ),
-                        ),
+                        height > 0
+                            ? Expanded(
+                                child: _buildContent(config),
+                              )
+                            : _buildContent(config),
                       ],
                     ],
                   ),
@@ -1117,8 +1156,9 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   List<Widget> _buildResizeHandles() {
     final handleSize = widget.config.resizeHandleSize;
@@ -1218,6 +1258,25 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     ];
   }
 
+  Widget _buildContent(DraggableWindowConfig config) {
+    return ClipRRect(
+      borderRadius: BorderRadius.vertical(
+        bottom: Radius.circular(config.borderRadius),
+      ),
+      child: RepaintBoundary(
+        child: config.enableScrolling
+            ? SingleChildScrollView(
+                padding: config.contentPadding,
+                child: widget.content,
+              )
+            : Padding(
+                padding: config.contentPadding,
+                child: widget.content,
+              ),
+      ),
+    );
+  }
+
   Widget _buildResizeHandle(_ResizeDirection direction, MouseCursor cursor) {
     return MouseRegion(
       cursor: cursor,
@@ -1247,6 +1306,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     final theme = Theme.of(context);
     final isMinimized = _controller.isMinimized;
     final config = widget.config;
+    final width = _calculateWidth(context);
 
     final headerColor = config.headerBackgroundColor ??
         (isFocused
@@ -1280,18 +1340,21 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
             widget.config.customHeader?.call(isMinimized) ??
             (isMinimized
                 ? _buildMinimizedHeader(theme, isFocused)
-                : _buildExpandedHeader(theme, isFocused)),
+                : _buildExpandedHeader(theme, isFocused, width > 0)),
       ),
     );
   }
 
   Widget _buildMinimizedHeader(ThemeData theme, bool isFocused) {
+    final width = _calculateWidth(context);
+    final isFixedSize = width > 0;
     final defaultIconColor = isFocused ? theme.colorScheme.primary : null;
     final iconColor = widget.config.headerIconColor ?? defaultIconColor;
     final buttonsColor = widget.config.headerButtonsColor ?? iconColor;
     final lang = widget.config.language;
 
     return Row(
+      mainAxisSize: isFixedSize ? MainAxisSize.max : MainAxisSize.min,
       children: [
         if (widget.config.showDragHandle)
           Icon(widget.config.dragHandleIcon, size: 14, color: iconColor),
@@ -1305,8 +1368,11 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
         ],
         if (widget.titleWidget != null || widget.title != null) ...[
           const SizedBox(width: 6),
-          Expanded(child: _buildTitleWidget(theme, isFocused, true)),
-        ] else
+          if (isFixedSize)
+            Expanded(child: _buildTitleWidget(theme, isFocused, true))
+          else
+            _buildTitleWidget(theme, isFocused, true),
+        ] else if (isFixedSize)
           const Spacer(),
         const SizedBox(width: 4),
         _buildHeaderButton(
@@ -1337,12 +1403,13 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     );
   }
 
-  Widget _buildExpandedHeader(ThemeData theme, bool isFocused) {
+  Widget _buildExpandedHeader(ThemeData theme, bool isFocused, bool isFixedSize) {
     final defaultIconColor = isFocused ? theme.colorScheme.primary : null;
     final iconColor = widget.config.headerIconColor ?? defaultIconColor;
     final lang = widget.config.language;
 
     return Row(
+      mainAxisSize: isFixedSize ? MainAxisSize.max : MainAxisSize.min,
       children: [
         if (widget.config.showDragHandle)
           Icon(widget.config.dragHandleIcon, size: 16, color: iconColor),
@@ -1356,8 +1423,11 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
         ],
         if (widget.titleWidget != null || widget.title != null) ...[
           const SizedBox(width: 8),
-          Expanded(child: _buildTitleWidget(theme, isFocused, false)),
-        ] else
+          if (isFixedSize)
+            Expanded(child: _buildTitleWidget(theme, isFocused, false))
+          else
+            _buildTitleWidget(theme, isFocused, false),
+        ] else if (isFixedSize)
           const Spacer(),
         if (widget.headerActions != null) ...[
           widget.headerActions!,

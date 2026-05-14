@@ -196,8 +196,8 @@ class _WindowManagerScopeState extends State<WindowManagerScope> {
     final controller = DraggableWindowController(
       initialSize: initialSize ??
           Size(
-            config?.initialWidth ?? widget.defaultConfig.initialWidth,
-            config?.initialHeight ?? widget.defaultConfig.initialHeight,
+            config?.initialWidth ?? widget.defaultConfig.initialWidth ?? 0,
+            config?.initialHeight ?? widget.defaultConfig.initialHeight ?? 0,
           ),
       initialPosition: initialPosition ?? const Offset(-9999, -9999),
       tag: unique ? id : null,

@@ -221,15 +221,19 @@ class DemoPage extends StatelessWidget {
                             label: Text('3'),
                             child: Icon(Icons.notifications_none, size: 18)),
                         content: const DemoContent(),
-                        config: DraggableWindowConfig(
-                          language: WindowLanguage.es, // Spanish
-                          showMinimizeButton: true,
-                          showDragHandle: false,
-                          borderRadius: 16,
-                          headerBackgroundColor: Color(0xFFFFEBEE),
-                          centerInitialPosition: false,
-                        ),
-                        initialSize: const Size(400, 450),
+                        config: const DraggableWindowConfig(
+                            language: WindowLanguage.es, // Spanish
+                            showMinimizeButton: true,
+                            resizable: false,
+                            showDragHandle: false,
+                            borderRadius: 16,
+                            headerBackgroundColor: Color(0xFFFFEBEE),
+                            centerInitialPosition:
+                                true, // Center it to see it better
+                            initialWidth: null, // Explicitly null for clarity
+                            initialHeight: null,
+                            maxWidth: 1000,
+                            maxHeight: 1000),
                       ),
                     ),
                   ],
@@ -284,70 +288,34 @@ class DemoContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Image.network(
-          'https://picsum.photos/seed/flutter/400/200',
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(
-              height: 150,
-              color: Colors.grey.shade200,
-              child: const Center(child: CircularProgressIndicator()),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) => Container(
-            height: 150,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.image_not_supported,
-                size: 48, color: Colors.grey),
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Dynamic Size Content',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 8),
+          const Text(
+            'This window has initialWidth/Height set to null.\nIt wraps exactly around its children.',
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'New Customization Options',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ElevatedButton(
+                onPressed: () {},
+                child: const Text('Small Button'),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'WindowManagerScope handles window lifecycles automatically. No more manual lists!',
-              ),
-              const SizedBox(height: 16),
-              const ListTile(
-                leading: Icon(Icons.check_circle, color: Colors.green),
-                title: Text('Easy open/close by ID'),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-              ),
-              const ListTile(
-                leading: Icon(Icons.check_circle, color: Colors.green),
-                title: Text('Automatic uniqueness management'),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-              ),
-              const ListTile(
-                leading: Icon(Icons.check_circle, color: Colors.green),
-                title: Text('Global control from any context'),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () =>
-                      WindowManagerScope.of(context).close('ultimate_window'),
-                  child: const Text('Close this window via controller'),
-                ),
-              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.check_circle, color: Colors.green),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
