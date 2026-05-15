@@ -178,8 +178,22 @@ class _WindowManagerScopeState extends State<WindowManagerScope> {
     VoidCallback? onMinimized,
     VoidCallback? onRestored,
   }) {
-    // If unique and already exists, bring to front
+    // If unique and already exists, update and bring to front
     if (unique && _windows.containsKey(id)) {
+      _updateWindow(
+        id: id,
+        content: content,
+        title: title,
+        titleWidget: titleWidget,
+        headerLeading: headerLeading,
+        headerActions: headerActions,
+        icon: icon,
+        config: config,
+        onClose: onClose,
+        onMinimized: onMinimized,
+        onRestored: onRestored,
+      );
+
       final existingWindow = _windows[id]!;
       existingWindow.controller.show();
       existingWindow.controller.bringToFront();
@@ -220,6 +234,38 @@ class _WindowManagerScopeState extends State<WindowManagerScope> {
       );
       controller.show();
     });
+  }
+
+  void _updateWindow({
+    required String id,
+    Widget? content,
+    String? title,
+    Widget? titleWidget,
+    Widget? headerLeading,
+    Widget? headerActions,
+    IconData? icon,
+    DraggableWindowConfig? config,
+    VoidCallback? onClose,
+    VoidCallback? onMinimized,
+    VoidCallback? onRestored,
+  }) {
+    final window = _windows[id];
+    if (window != null) {
+      setState(() {
+        _windows[id] = window.copyWith(
+          content: content,
+          title: title,
+          titleWidget: titleWidget,
+          headerLeading: headerLeading,
+          headerActions: headerActions,
+          icon: icon,
+          config: config,
+          onClose: onClose,
+          onMinimized: onMinimized,
+          onRestored: onRestored,
+        );
+      });
+    }
   }
 
   void _closeWindow(String id) {
@@ -486,6 +532,47 @@ class WindowManagerScopeController {
     }
   }
 
+  /// Updates an existing window's properties.
+  ///
+  /// This is useful for changing content or configuration
+  /// without closing and reopening the window.
+  ///
+  /// Example:
+  /// ```dart
+  /// windows.update(
+  ///   id: 'settings',
+  ///   content: NewSettingsWidget(),
+  ///   title: 'Advanced Settings',
+  /// );
+  /// ```
+  void update({
+    required String id,
+    Widget? content,
+    String? title,
+    Widget? titleWidget,
+    Widget? headerLeading,
+    Widget? headerActions,
+    IconData? icon,
+    DraggableWindowConfig? config,
+    VoidCallback? onClose,
+    VoidCallback? onMinimized,
+    VoidCallback? onRestored,
+  }) {
+    _state._updateWindow(
+      id: id,
+      content: content,
+      title: title,
+      titleWidget: titleWidget,
+      headerLeading: headerLeading,
+      headerActions: headerActions,
+      icon: icon,
+      config: config,
+      onClose: onClose,
+      onMinimized: onMinimized,
+      onRestored: onRestored,
+    );
+  }
+
   /// Returns whether a window with the given ID is currently open.
   ///
   /// Example:
@@ -560,4 +647,32 @@ class _ManagedWindow {
     this.onMinimized,
     this.onRestored,
   });
+
+  _ManagedWindow copyWith({
+    Widget? content,
+    String? title,
+    Widget? titleWidget,
+    Widget? headerLeading,
+    Widget? headerActions,
+    IconData? icon,
+    DraggableWindowConfig? config,
+    VoidCallback? onClose,
+    VoidCallback? onMinimized,
+    VoidCallback? onRestored,
+  }) {
+    return _ManagedWindow(
+      id: id,
+      controller: controller,
+      content: content ?? this.content,
+      title: title ?? this.title,
+      titleWidget: titleWidget ?? this.titleWidget,
+      headerLeading: headerLeading ?? this.headerLeading,
+      headerActions: headerActions ?? this.headerActions,
+      icon: icon ?? this.icon,
+      config: config ?? this.config,
+      onClose: onClose ?? this.onClose,
+      onMinimized: onMinimized ?? this.onMinimized,
+      onRestored: onRestored ?? this.onRestored,
+    );
+  }
 }
