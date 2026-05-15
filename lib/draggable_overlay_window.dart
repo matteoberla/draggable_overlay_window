@@ -843,6 +843,16 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     return _currentSize.height;
   }
 
+  bool get _shouldForceWidth => 
+      widget.config.initialWidth != null || 
+      widget.config.widthCalculator != null || 
+      _controller.size.width > 0;
+
+  bool get _shouldForceHeight => 
+      widget.config.initialHeight != null || 
+      widget.config.heightCalculator != null || 
+      _controller.size.height > 0;
+
   Size _getActualSize() {
     if (_currentSize.width > 0 && _currentSize.height > 0) {
       return _currentSize;
@@ -1101,15 +1111,14 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                 ? theme.colorScheme.primary.withValues(alpha: 0.3)
                 : null,
             child: Container(
-              key: _containerKey,
               constraints: BoxConstraints(
                 minWidth: config.minWidth,
                 minHeight: isMinimized ? height : config.minHeight,
                 maxWidth: config.maxWidth ?? double.infinity,
                 maxHeight: isMinimized ? height : (config.maxHeight ?? double.infinity),
               ),
-              width: isMinimized ? width : (width > 0 ? width : null),
-              height: isMinimized ? height : (height > 0 ? height : null),
+              width: isMinimized ? width : (_shouldForceWidth ? width : null),
+              height: isMinimized ? height : (_shouldForceHeight ? height : null),
               decoration: BoxDecoration(
                 color: backgroundColor,
                 borderRadius: borderRadius,
@@ -1134,6 +1143,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                 children: [
                   // Main content
                   Column(
+                    key: _containerKey, // Move the key to the internal column to measure content
                     mainAxisSize: height > 0 ? MainAxisSize.max : MainAxisSize.min,
                     children: [
                       // When minimized, the header should expand to fill the space
