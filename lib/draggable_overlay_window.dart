@@ -240,6 +240,11 @@ class DraggableWindowConfig {
   /// Receives [isMinimized] and a [StateSetter] to allow forcing a window rebuild.
   final Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customHeader;
 
+  /// Custom content builder (overrides the static [content] passed to windows.open).
+  /// Receives [isMinimized] and a [StateSetter] to allow forcing a window rebuild.
+  /// This is extremely useful if you want the content to be rebuilt dynamically.
+  final Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customContent;
+
   const DraggableWindowConfig({
     this.minimizedHeight = 48.0,
     this.borderRadius = 12.0,
@@ -281,6 +286,7 @@ class DraggableWindowConfig {
     this.centerInitialPosition = true,
     this.showCloseButton = true,
     this.customHeader,
+    this.customContent,
   });
 
   /// Border width
@@ -371,6 +377,7 @@ class DraggableWindowConfig {
     bool? centerInitialPosition,
     bool? showCloseButton,
     Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customHeader,
+    Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customContent,
   }) {
     return DraggableWindowConfig(
       minimizedHeight: minimizedHeight ?? this.minimizedHeight,
@@ -416,6 +423,7 @@ class DraggableWindowConfig {
           centerInitialPosition ?? this.centerInitialPosition,
       showCloseButton: showCloseButton ?? this.showCloseButton,
       customHeader: customHeader ?? this.customHeader,
+      customContent: customContent ?? this.customContent,
     );
   }
 }
@@ -1259,6 +1267,8 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
   }
 
   Widget _buildContent(DraggableWindowConfig config) {
+    final Widget actualContent = config.customContent?.call(_controller.isMinimized, _windowStateSetter) ?? widget.content;
+
     return ClipRRect(
       borderRadius: BorderRadius.vertical(
         bottom: Radius.circular(config.borderRadius),
@@ -1267,11 +1277,11 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
         child: config.enableScrolling
             ? SingleChildScrollView(
                 padding: config.contentPadding,
-                child: widget.content,
+                child: actualContent,
               )
             : Padding(
                 padding: config.contentPadding,
-                child: widget.content,
+                child: actualContent,
               ),
       ),
     );
@@ -1298,6 +1308,18 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     );
   }
 
+  void _windowStateSetter(VoidCallback fn) {
+    if (!mounted) return;
+    setState(fn);
+
+    // Re-validate dimensions in the next frame to handle content changes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _revalidateDimensions();
+      }
+    });
+  }
+
   Widget _buildHeader(
     BuildContext context,
     bool isFocused, {
@@ -1306,43 +1328,90 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     final theme = Theme.of(context);
     final isMinimized = _controller.isMinimized;
     final config = widget.config;
-    final width = _calculateWidth(context);
 
     final headerColor = config.headerBackgroundColor ??
         (isFocused
             ? theme.colorScheme.primaryContainer.withValues(alpha: 0.3)
             : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5));
 
-    final padding =
-        config.headerPadding ?? const EdgeInsets.symmetric(horizontal: 12);
-
     return GestureDetector(
       onPanStart: (details) {
         _handleDragStart(details);
       },
       onPanUpdate: _handleDrag,
-      onPanEnd: (_) {},
-      onPanCancel: () {},
+      behavior: HitTestBehavior.opaque,
       child: Container(
-        // When expandHeight is true, do not set fixed height (let Expanded control)
-        height: expandHeight ? null : config.minimizedHeight,
-        padding: padding,
+        padding: widget.config.headerPadding ??
+            const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.vertical(
-            top: Radius.circular(config.borderRadius),
+            top: Radius.circular(widget.config.borderRadius),
             bottom: isMinimized
-                ? Radius.circular(config.borderRadius)
+                ? Radius.circular(widget.config.borderRadius)
                 : Radius.zero,
           ),
           color: headerColor,
         ),
-        child: widget.customHeader?.call(isMinimized, setState) ??
-            widget.config.customHeader?.call(isMinimized, setState) ??
+        child: widget.customHeader?.call(isMinimized, _windowStateSetter) ??
+            widget.config.customHeader?.call(isMinimized, _windowStateSetter) ??
             (isMinimized
                 ? _buildMinimizedHeader(theme, isFocused)
-                : _buildExpandedHeader(theme, isFocused, width > 0)),
+                : _buildExpandedHeader(theme, isFocused, _currentSize.width > 0)),
       ),
     );
+  }
+
+  /// Re-validates the window dimensions and position to ensure it stays within bounds
+  /// and follows content if necessary.
+  void _revalidateDimensions() {
+    if (!mounted) return;
+
+    final box = _containerKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) return;
+
+    final screenSize = MediaQuery.of(context).size;
+    final currentSize = box.size;
+
+    // Apply constraints
+    double width = currentSize.width.clamp(
+      widget.config.minWidth,
+      widget.config.maxWidth ?? screenSize.width,
+    );
+    double height = currentSize.height.clamp(
+      widget.config.minHeight,
+      widget.config.maxHeight ?? screenSize.height,
+    );
+
+    // If we were following content (size was zero or not manually set), 
+    // we update to the new intrinsic size.
+    // If resizable is false, we always follow content unless fixed.
+    final bool followContent = !widget.config.resizable || 
+        (widget.config.initialWidth == null && _currentSize.width == 0) ||
+        (widget.config.initialHeight == null && _currentSize.height == 0);
+
+    if (followContent) {
+      // Just ensure we don't exceed screen
+      width = width.clamp(0.0, screenSize.width);
+      height = height.clamp(0.0, screenSize.height);
+    }
+
+    Offset position = _currentPosition;
+    
+    // Ensure position is within screen bounds with the new size
+    double left = position.dx.clamp(0.0, (screenSize.width - width).clamp(0.0, screenSize.width));
+    double top = position.dy.clamp(0.0, (screenSize.height - height).clamp(0.0, screenSize.height));
+    
+    final newPosition = Offset(left, top);
+    final newSize = Size(width, height);
+
+    if (newPosition != _currentPosition || newSize != _currentSize) {
+      setState(() {
+        _currentPosition = newPosition;
+        _currentSize = newSize;
+      });
+      _controller.setPosition(newPosition);
+      _controller.setSize(newSize);
+    }
   }
 
   Widget _buildMinimizedHeader(ThemeData theme, bool isFocused) {
