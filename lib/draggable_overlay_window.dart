@@ -236,14 +236,7 @@ class DraggableWindowConfig {
   /// Whether to show the close button
   final bool showCloseButton;
 
-  /// Custom header builder (overrides the entire header content but keeps drag logic)
-  /// Receives [isMinimized] and a [StateSetter] to allow forcing a window rebuild.
-  final Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customHeader;
 
-  /// Custom content builder (overrides the static [content] passed to windows.open).
-  /// Receives [isMinimized] and a [StateSetter] to allow forcing a window rebuild.
-  /// This is extremely useful if you want the content to be rebuilt dynamically.
-  final Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customContent;
 
   const DraggableWindowConfig({
     this.minimizedHeight = 48.0,
@@ -285,8 +278,6 @@ class DraggableWindowConfig {
     this.language = WindowLanguage.en,
     this.centerInitialPosition = true,
     this.showCloseButton = true,
-    this.customHeader,
-    this.customContent,
   });
 
   /// Border width
@@ -376,8 +367,6 @@ class DraggableWindowConfig {
     WindowLanguage? language,
     bool? centerInitialPosition,
     bool? showCloseButton,
-    Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customHeader,
-    Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customContent,
   }) {
     return DraggableWindowConfig(
       minimizedHeight: minimizedHeight ?? this.minimizedHeight,
@@ -422,8 +411,6 @@ class DraggableWindowConfig {
       centerInitialPosition:
           centerInitialPosition ?? this.centerInitialPosition,
       showCloseButton: showCloseButton ?? this.showCloseButton,
-      customHeader: customHeader ?? this.customHeader,
-      customContent: customContent ?? this.customContent,
     );
   }
 }
@@ -1164,9 +1151,12 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                           ),
                         _shouldForceHeight
                             ? Expanded(
-                                child: _buildContent(config),
+                                child: _buildContent(),
                               )
-                            : _buildContent(config),
+                            : Flexible(
+                                fit: FlexFit.loose,
+                                child: _buildContent(),
+                              ),
                       ],
                     ],
                   ),
@@ -1282,9 +1272,8 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     ];
   }
 
-  Widget _buildContent(DraggableWindowConfig config) {
+  Widget _buildContent() {
     final Widget actualContent = widget.customContent?.call(_controller.isMinimized, _windowStateSetter) ?? 
-                                 config.customContent?.call(_controller.isMinimized, _windowStateSetter) ?? 
                                  widget.content ?? 
                                  const SizedBox();
 
@@ -1371,8 +1360,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
           ),
           color: headerColor,
         ),
-        child: widget.customHeader?.call(isMinimized, _windowStateSetter) ??
-            widget.config.customHeader?.call(isMinimized, _windowStateSetter) ??
+        child: widget.customHeader?.call(isMinimized, _windowStateSetter) ?? 
             (isMinimized
                 ? _buildMinimizedHeader(theme, isFocused)
                 : _buildExpandedHeader(theme, isFocused, _currentSize.width > 0)),
