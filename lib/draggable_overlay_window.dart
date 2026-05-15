@@ -1273,7 +1273,10 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
   }
 
   Widget _buildContent(DraggableWindowConfig config) {
-    final Widget actualContent = config.customContent?.call(_controller.isMinimized, _windowStateSetter) ?? widget.content ?? const SizedBox();
+    final Widget actualContent = widget.customContent?.call(_controller.isMinimized, _windowStateSetter) ?? 
+                                 config.customContent?.call(_controller.isMinimized, _windowStateSetter) ?? 
+                                 widget.content ?? 
+                                 const SizedBox();
 
     return ClipRRect(
       borderRadius: BorderRadius.vertical(
