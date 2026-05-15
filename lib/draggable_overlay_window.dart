@@ -1279,16 +1279,16 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
 
     return ClipRRect(
       borderRadius: BorderRadius.vertical(
-        bottom: Radius.circular(config.borderRadius),
+        bottom: Radius.circular(widget.config.borderRadius),
       ),
       child: RepaintBoundary(
-        child: config.enableScrolling
+        child: widget.config.enableScrolling
             ? SingleChildScrollView(
-                padding: config.contentPadding,
+                padding: widget.config.contentPadding,
                 child: actualContent,
               )
             : Padding(
-                padding: config.contentPadding,
+                padding: widget.config.contentPadding,
                 child: actualContent,
               ),
       ),
