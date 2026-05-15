@@ -631,6 +631,11 @@ class DraggableOverlayWindow extends StatefulWidget {
   /// If provided, this overrides [title], [titleWidget], [headerLeading], [headerActions], [icon]
   final Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customHeader;
 
+  /// Custom content builder (overrides the static [content] passed to windows.open).
+  /// Receives [isMinimized] and a [StateSetter] to allow forcing a window rebuild.
+  /// This is extremely useful if you want the content to be rebuilt dynamically.
+  final Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customContent;
+
   /// Custom configurations
   final DraggableWindowConfig config;
 
@@ -662,6 +667,7 @@ class DraggableOverlayWindow extends StatefulWidget {
     this.headerActions,
     this.icon,
     this.customHeader,
+    this.customContent,
     this.config = const DraggableWindowConfig(),
     this.onFocus,
     this.onClose,
@@ -1679,6 +1685,7 @@ class WindowEntry {
   final Widget? headerActions;
   final IconData? icon;
   final Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customHeader;
+  final Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customContent;
   final DraggableWindowConfig config;
   final VoidCallback? onFocus;
   final VoidCallback? onClose;
@@ -1696,6 +1703,7 @@ class WindowEntry {
     this.headerActions,
     this.icon,
     this.customHeader,
+    this.customContent,
     this.config = const DraggableWindowConfig(),
     this.onFocus,
     this.onClose,
@@ -1758,6 +1766,7 @@ class _WindowWidgetState extends State<_WindowWidget> {
       headerActions: widget.entry.headerActions,
       icon: widget.entry.icon,
       customHeader: widget.entry.customHeader,
+      customContent: widget.entry.customContent,
       content: widget.entry.content,
       config: widget.entry.config,
       onFocus: () {
