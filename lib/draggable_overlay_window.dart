@@ -1162,7 +1162,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                             color: config.dividerColor ??
                                 borderColor.withValues(alpha: 0.5),
                           ),
-                        height > 0
+                        _shouldForceHeight
                             ? Expanded(
                                 child: _buildContent(config),
                               )
