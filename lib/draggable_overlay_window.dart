@@ -237,8 +237,8 @@ class DraggableWindowConfig {
   final bool showCloseButton;
 
   /// Custom header builder (overrides the entire header content but keeps drag logic)
-  /// Receives [isMinimized] as a parameter to allow different UIs
-  final Widget? Function(bool isMinimized)? customHeader;
+  /// Receives [isMinimized] and a [StateSetter] to allow forcing a window rebuild.
+  final Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customHeader;
 
   const DraggableWindowConfig({
     this.minimizedHeight = 48.0,
@@ -370,7 +370,7 @@ class DraggableWindowConfig {
     WindowLanguage? language,
     bool? centerInitialPosition,
     bool? showCloseButton,
-    Widget? Function(bool isMinimized)? customHeader,
+    Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customHeader,
   }) {
     return DraggableWindowConfig(
       minimizedHeight: minimizedHeight ?? this.minimizedHeight,
@@ -619,9 +619,9 @@ class DraggableOverlayWindow extends StatefulWidget {
   final Widget content;
 
   /// Custom header builder (overrides the entire header content but keeps drag logic)
-  /// Receives [isMinimized] as a parameter to allow different UIs
+  /// Receives [isMinimized] and a [StateSetter] to allow forcing a window rebuild.
   /// If provided, this overrides [title], [titleWidget], [headerLeading], [headerActions], [icon]
-  final Widget? Function(bool isMinimized)? customHeader;
+  final Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customHeader;
 
   /// Custom configurations
   final DraggableWindowConfig config;
@@ -1044,7 +1044,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       return const SizedBox.shrink();
     }
 
-    final screenSize = MediaQuery.of(context).size;
+
 
     // If centering is enabled but not yet initialized, use Align.center
     final bool useInitialCentering =
@@ -1336,8 +1336,8 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
           ),
           color: headerColor,
         ),
-        child: widget.customHeader?.call(isMinimized) ??
-            widget.config.customHeader?.call(isMinimized) ??
+        child: widget.customHeader?.call(isMinimized, setState) ??
+            widget.config.customHeader?.call(isMinimized, setState) ??
             (isMinimized
                 ? _buildMinimizedHeader(theme, isFocused)
                 : _buildExpandedHeader(theme, isFocused, width > 0)),
@@ -1609,7 +1609,7 @@ class WindowEntry {
   final Widget? headerLeading;
   final Widget? headerActions;
   final IconData? icon;
-  final Widget? Function(bool isMinimized)? customHeader;
+  final Widget? Function(bool isMinimized, StateSetter windowStateSetter)? customHeader;
   final DraggableWindowConfig config;
   final VoidCallback? onFocus;
   final VoidCallback? onClose;

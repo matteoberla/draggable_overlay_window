@@ -325,6 +325,14 @@ class _WindowManagerScopeState extends State<WindowManagerScope> {
     return _windows[id]?.controller;
   }
 
+  String? _getWindowTitle(String id) {
+    return _windows[id]?.title;
+  }
+
+  IconData? _getWindowIcon(String id) {
+    return _windows[id]?.icon;
+  }
+
   List<String> get _openWindowIds => _windows.keys.toList();
 
   @override
@@ -599,6 +607,22 @@ class WindowManagerScopeController {
   /// ```
   DraggableWindowController? getController(String id) {
     return _state._getController(id);
+  }
+
+  /// Gets the current title of a specific window.
+  ///
+  /// Useful inside custom headers to get the most up-to-date title
+  /// when the window is updated via [update].
+  String? getWindowTitle(String id) {
+    return _state._getWindowTitle(id);
+  }
+
+  /// Gets the current icon of a specific window.
+  ///
+  /// Useful inside custom headers to get the most up-to-date icon
+  /// when the window is updated via [update].
+  IconData? getWindowIcon(String id) {
+    return _state._getWindowIcon(id);
   }
 
   /// List of IDs of all currently open windows.
