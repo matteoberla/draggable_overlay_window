@@ -840,6 +840,10 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
       widget.config.heightCalculator != null || 
       (widget.config.resizable && _controller.size.height > 0);
 
+  bool get _isAtMaxHeight => 
+      widget.config.maxHeight != null && 
+      _currentSize.height >= (widget.config.maxHeight! - 1.0); // 1px buffer for floating point errors
+
   Size _getActualSize() {
     if (_currentSize.width > 0 && _currentSize.height > 0) {
       return _currentSize;
@@ -1131,7 +1135,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                   // Main content
                   Column(
                     key: _containerKey, // Move the key to the internal column to measure content
-                    mainAxisSize: _shouldForceHeight ? MainAxisSize.max : MainAxisSize.min,
+                    mainAxisSize: (_shouldForceHeight || _isAtMaxHeight) ? MainAxisSize.max : MainAxisSize.min,
                     children: [
                       // When minimized, the header should expand to fill the space
                       if (isMinimized)
@@ -1149,7 +1153,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
                             color: config.dividerColor ??
                                 borderColor.withValues(alpha: 0.5),
                           ),
-                        _shouldForceHeight
+                        (_shouldForceHeight || _isAtMaxHeight)
                             ? Expanded(
                                 child: _buildContent(),
                               )
