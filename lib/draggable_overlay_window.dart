@@ -623,8 +623,8 @@ class DraggableOverlayWindow extends StatefulWidget {
   /// Icon displayed in the header (optional)
   final IconData? icon;
 
-  /// Window content
-  final Widget content;
+  /// Widget to display in the window body
+  final Widget? content;
 
   /// Custom header builder (overrides the entire header content but keeps drag logic)
   /// Receives [isMinimized] and a [StateSetter] to allow forcing a window rebuild.
@@ -660,7 +660,7 @@ class DraggableOverlayWindow extends StatefulWidget {
   const DraggableOverlayWindow({
     required Key key,
     required this.controller,
-    required this.content,
+    this.content,
     this.title,
     this.titleWidget,
     this.headerLeading,
@@ -1273,7 +1273,7 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
   }
 
   Widget _buildContent(DraggableWindowConfig config) {
-    final Widget actualContent = config.customContent?.call(_controller.isMinimized, _windowStateSetter) ?? widget.content;
+    final Widget actualContent = config.customContent?.call(_controller.isMinimized, _windowStateSetter) ?? widget.content ?? const SizedBox();
 
     return ClipRRect(
       borderRadius: BorderRadius.vertical(
@@ -1678,7 +1678,7 @@ class _WindowScopeState extends State<WindowScope> {
 /// Represents a window entry for use with [WindowScope].
 class WindowEntry {
   final DraggableWindowController controller;
-  final Widget content;
+  final Widget? content;
   final String? title;
   final Widget? titleWidget;
   final Widget? headerLeading;
@@ -1696,7 +1696,7 @@ class WindowEntry {
 
   const WindowEntry({
     required this.controller,
-    required this.content,
+    this.content,
     this.title,
     this.titleWidget,
     this.headerLeading,

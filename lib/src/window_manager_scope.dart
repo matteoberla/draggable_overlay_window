@@ -164,7 +164,7 @@ class _WindowManagerScopeState extends State<WindowManagerScope> {
 
   void _openWindow({
     required String id,
-    required Widget content,
+    Widget? content,
     String? title,
     Widget? titleWidget,
     Widget? headerLeading,
@@ -428,7 +428,7 @@ class WindowManagerScopeController {
   /// ```
   void open({
     required String id,
-    required Widget content,
+    Widget? content,
     String? title,
     Widget? titleWidget,
     Widget? headerLeading,
@@ -528,7 +528,7 @@ class WindowManagerScopeController {
   /// ```
   void toggle({
     required String id,
-    required Widget content,
+    Widget? content,
     String? title,
     Widget? titleWidget,
     Widget? headerLeading,
@@ -670,7 +670,7 @@ class WindowManagerScopeController {
 class _ManagedWindow {
   final String id;
   final DraggableWindowController controller;
-  final Widget content;
+  final Widget? content;
   final String? title;
   final Widget? titleWidget;
   final Widget? headerLeading;
@@ -686,7 +686,7 @@ class _ManagedWindow {
   _ManagedWindow({
     required this.id,
     required this.controller,
-    required this.content,
+    this.content,
     this.title,
     this.titleWidget,
     this.headerLeading,
