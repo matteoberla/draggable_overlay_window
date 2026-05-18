@@ -1698,16 +1698,42 @@ class _WindowScopeState extends State<WindowScope> {
       return zIndexA.compareTo(zIndexB);
     });
 
-    return Stack(
+    final hasDirectionality = Directionality.maybeOf(context) != null;
+    final hasOverlay = Overlay.maybeOf(context) != null;
+
+    final stack = Stack(
       fit: StackFit.expand,
       children: [
         widget.child,
-        ...visibleWindows.map((entry) => _WindowWidget(
-              key: ValueKey(entry.controller.windowId),
-              entry: entry,
-            )),
+        ...visibleWindows.map((entry) {
+          final windowWidget = _WindowWidget(
+            key: ValueKey(entry.controller.windowId),
+            entry: entry,
+          );
+
+          if (!hasOverlay) {
+            return Overlay(
+              initialEntries: [
+                OverlayEntry(
+                  builder: (context) => windowWidget,
+                ),
+              ],
+            );
+          }
+
+          return windowWidget;
+        }),
       ],
     );
+
+    if (!hasDirectionality) {
+      return Directionality(
+        textDirection: TextDirection.ltr,
+        child: stack,
+      );
+    }
+
+    return stack;
   }
 }
 
@@ -1878,14 +1904,39 @@ class _OverlayWindowStackState extends State<OverlayWindowStack> {
       return zIndexA.compareTo(zIndexB);
     });
 
+    final hasDirectionality = Directionality.maybeOf(context) != null;
+    final hasOverlay = Overlay.maybeOf(context) != null;
+
+    final stack = Stack(
+      children: [
+        if (widget.child != null) Positioned.fill(child: widget.child!),
+        // CORRECTION: Windows must have keys assigned at creation
+        ...sortedWindows.map((window) {
+          if (!hasOverlay) {
+            return Overlay(
+              initialEntries: [
+                OverlayEntry(
+                  builder: (context) => window,
+                ),
+              ],
+            );
+          }
+          return window;
+        }),
+      ],
+    );
+
+    if (!hasDirectionality) {
+      return SizedBox.expand(
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: stack,
+        ),
+      );
+    }
+
     return SizedBox.expand(
-      child: Stack(
-        children: [
-          if (widget.child != null) Positioned.fill(child: widget.child!),
-          // CORRECTION: Windows must have keys assigned at creation
-          ...sortedWindows,
-        ],
-      ),
+      child: stack,
     );
   }
 }
