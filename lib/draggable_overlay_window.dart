@@ -560,6 +560,12 @@ class DraggableWindowController extends ChangeNotifier {
     if (size != null) _size = size;
   }
 
+  /// Triggers a rebuild of all widgets listening to this controller.
+  /// Useful to force a rebuild of the window widget, title, and content.
+  void update() {
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     WindowManager().unregisterWindow(_windowId);
@@ -782,6 +788,31 @@ class _DraggableOverlayWindowState extends State<DraggableOverlayWindow> {
     _controller.removeListener(_onControllerChanged);
     _windowManager.removeListener(_onWindowManagerChanged);
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(DraggableOverlayWindow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.controller != oldWidget.controller) {
+      oldWidget.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+    }
+
+    if (widget.content != oldWidget.content ||
+        widget.title != oldWidget.title ||
+        widget.titleWidget != oldWidget.titleWidget ||
+        widget.icon != oldWidget.icon ||
+        widget.customContent != oldWidget.customContent ||
+        widget.customHeader != oldWidget.customHeader ||
+        widget.config != oldWidget.config) {
+      setState(() {});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _revalidateDimensions();
+        }
+      });
+    }
   }
 
   void _onControllerChanged() {

@@ -275,6 +275,9 @@ class _WindowManagerScopeState extends State<WindowManagerScope> {
           onRestored: onRestored,
         );
       });
+      // Explicitly notify listeners of the controller to force rebuilding
+      // any widget listening to this controller (like DraggableOverlayWindow)
+      window.controller.update();
     }
   }
 
